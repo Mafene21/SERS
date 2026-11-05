@@ -1,0 +1,44 @@
+{
+  "name": "sers-responder-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@hookform/resolvers": "7.0.3",
+    "@tailwindcss/postcss": "4.3.4",
+    "leaflet": "1.9.4",
+    "lucide-react": "1.69.0",
+    "next": "16.4.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-hook-form": "7.91.0",
+    "react-leaflet": "5.0.0",
+    "recharts": "3.10.1",
+    "tailwindcss": "4.3.4",
+    "zod": "4.6.7"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.1"
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@types/leaflet": "1.9.22",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.5",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  }
+}
