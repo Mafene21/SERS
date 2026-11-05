@@ -4,6 +4,14 @@ Phase 1 of the **Smart Emergency Response System**, a university Mobile Computin
 
 **This is a training demonstration. All incident records, responder identities, locations of incidents, notifications, and statistics are simulated. It does not contact emergency services.** The map uses real OpenStreetMap geographic data with fictional incident positions.
 
+## Live dashboard
+
+Open [the SERS dashboard on Vercel](https://sers-mafene21-5969.vercel.app/). Vercel hosts the Next.js application and deploys updates from this repository's `main` branch.
+
+The [GitHub Pages address](https://mafene21.github.io/SERS/) redirects to the dashboard. The root `index.html` provides this redirect; the application itself is in `src/app`.
+
+Each browser has its own simulated workspace. Phase 2 remains on hold; sign-in, a shared database, and real emergency dispatch are not enabled.
+
 ## Run locally
 
 Requirements: Node.js 20.20+ (or a supported newer LTS release), npm, and a modern browser.
@@ -117,7 +125,7 @@ After Phase 1 approval, Phase 2 should:
 4. Add RLS and negative permission tests, including self-promotion, cross-team access, inactive accounts, and competing assignments.
 5. Replace the demo data adapter while retaining domain types and presentation components. Define the future mobile reporting contract, reporter permissions, duplicate-submission protection, and coordinate validation.
 
-Later phases add shared real-time notifications and map updates, complete integration checks, and Vercel deployment. Phase 1 can be versioned on GitHub independently of backend integration. No deployment has been created in Phase 1.
+Later phases add shared real-time notifications and map updates, and complete backend integration checks. Phase 1 is published on Vercel with source on GitHub; publishing this demonstration does not enable Phase 2.
 
 ## Dependency note
 
