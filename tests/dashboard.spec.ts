@@ -15,6 +15,185 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+test("control centre updates waiting ages and assigns from the queue", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date("2026-11-11T08:30:00Z") });
+  await page.goto("/");
+  const row = page.locator("tbody tr").filter({ hasText: "SERS-001" });
+  await expect(row.locator(".waiting-badge")).toContainText("12 min");
+  await page.clock.fastForward(120_000);
+  await expect(row.locator(".waiting-badge")).toContainText("14 min");
+  const readiness = page
+    .locator(".stat-card")
+    .filter({ hasText: "Available responders" });
+  await expect(readiness.locator(".stat-value strong")).toHaveText("03");
+  await page
+    .getByRole("link", { name: "Assign SERS-001", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/incidents\/001#response-management$/);
+  await page.getByLabel("Assign a responder").selectOption("road-3");
+  await page
+    .getByRole("button", { name: "Assign responder", exact: true })
+    .click();
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(readiness.locator(".stat-value strong")).toHaveText("02");
+  await expect(row).toContainText("Sarah Namuli");
+  await expect(
+    page.locator(".team-availability-row").filter({ hasText: "Road response" }),
+  ).toContainText("1 available");
+});
+
+test("responder mobile home supports location, notes, status changes, history and duty", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByLabel("Preview role").selectOption("road-1");
+  await expect(
+    page.getByRole("heading", { name: "My assignments", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".assignment-focus")).toHaveCount(1);
+  await expect(page.locator(".assignment-focus")).toContainText(
+    "Motorcycle collision",
+  );
+  await expect(page.locator(".leaflet-marker-icon")).toHaveCount(1);
+  const nav = page.getByRole("navigation", {
+    name: "Responder quick navigation",
+  });
+  await expect(nav).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Assign responder", exact: true }),
+  ).toHaveCount(0);
+  const destination = await page
+    .getByRole("link", { name: /Directions to fictional/ })
+    .getAttribute("href");
+  expect(new URL(destination!).searchParams.get("destination")).toBe(
+    "0.3395,32.5745",
+  );
+  await page
+    .getByRole("button", { name: "Copy location", exact: true })
+    .click();
+  await expect(page.locator(".location-feedback")).toHaveText(
+    "Coordinates copied.",
+  );
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    "0.33950, 32.57450",
+  );
+  await page.getByLabel("My availability").selectOption("Off duty");
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "Complete active assignments",
+  );
+  await expect(page.getByLabel("My availability")).toHaveValue("On duty");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+  await page.screenshot({
+    path: "test-results/responder-mobile-home.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  const completed = Number(
+    await page.locator(".responder-stats strong").nth(1).innerText(),
+  );
+  await page
+    .getByRole("link", { name: "Add response note", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/incidents\/003#response-notes$/);
+  await page
+    .getByLabel("Add a response note", { exact: false })
+    .fill("Training update from the responder workspace.");
+  await page.getByRole("button", { name: "Add note", exact: true }).click();
+  await nav.getByRole("link", { name: "Assignments", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Start responding", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Mark as resolved", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "No active assignments" }),
+  ).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  await expect(page.locator(".responder-stats strong").nth(1)).toHaveText(
+    String(completed + 1),
+  );
+  await page.getByLabel("My availability").selectOption("Off duty");
+  await page.reload();
+  await expect(page.getByLabel("My availability")).toHaveValue("Off duty");
+  await nav.getByRole("link", { name: "History", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "My response history", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Search incidents", { exact: true }).fill("SERS-003");
+  await page.getByRole("link", { name: "View SERS-003", exact: true }).click();
+  await expect(page.locator(".response-note")).toContainText(
+    "Training update from the responder workspace.",
+  );
+  await expect(page.locator(".closed-notice")).toContainText("resolved");
+});
+
+test("responder map defaults to personal assignments and history stays personal", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel("Preview role").selectOption("fire-1");
+  await expect(page.locator(".assignment-focus")).toContainText(
+    "Commercial building fire",
+  );
+  await page.goto("/map");
+  await expect(page.getByLabel("Map scope")).toHaveValue("mine");
+  await expect(page.locator(".map-incident-card")).toHaveCount(1);
+  await page.getByLabel("Map scope").selectOption("team");
+  await expect(page.locator(".map-incident-card")).toHaveCount(3);
+  await expect(page.locator(".map-incident-list")).not.toContainText(
+    "Two-vehicle collision",
+  );
+  await page.goto("/reports");
+  await expect(
+    page.getByRole("heading", { name: "My response history", exact: true }),
+  ).toBeVisible();
+  const names = await page
+    .locator(".responder-cell strong, .responder-cell > span:last-child")
+    .allTextContents();
+  expect(names.length).toBeGreaterThan(0);
+  expect(names.every((name) => name.includes("Nina Patel"))).toBeTruthy();
+});
+
+test("location controls handle missing coordinates and clipboard rejection", async ({
+  page,
+}) => {
+  await page.goto("/incidents/012");
+  await expect(
+    page.getByText(
+      "Directions and copying will be available when coordinates are confirmed.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Directions to fictional/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Copy location", exact: true }),
+  ).toHaveCount(0);
+  await page.goto("/incidents/003");
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error("Denied")) },
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Copy location", exact: true })
+    .click();
+  await expect(page.locator(".location-feedback")).toContainText(
+    "Copy unavailable. Select these coordinates: 0.33950, 32.57450",
+  );
+});
+
 test("dashboard renders consistent records, map markers, and accessible navigation", async ({
   page,
 }) => {
@@ -22,7 +201,7 @@ test("dashboard renders consistent records, map markers, and accessible navigati
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Operational overview" }),
+    page.getByRole("heading", { name: "Incident control centre" }),
   ).toBeVisible();
   await expect(
     page.getByText("Demonstration workspace", { exact: true }),
@@ -197,7 +376,7 @@ test("mobile navigation, dark theme, and reset work without page overflow", asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Operational overview" }),
+    page.getByRole("heading", { name: "Incident control centre" }),
   ).toBeVisible();
   await expect(page.locator(".leaflet-marker-icon")).toHaveCount(7);
   expect(

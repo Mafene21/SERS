@@ -26,6 +26,7 @@ import {
   Radio,
   CircleHelp,
   CheckCheck,
+  UserRound,
 } from "lucide-react";
 import { useDemo } from "./demo-provider";
 import { date, time } from "@/lib/utils";
@@ -38,6 +39,20 @@ const links = [
   { href: "/assignments", label: "My assignments", icon: Radio },
   { href: "/responders", label: "Response teams", icon: Users },
   { href: "/reports", label: "History & reports", icon: FileChartColumn },
+];
+
+const responderLinks = [
+  { href: "/", label: "My assignments", icon: Radio },
+  { href: "/incidents", label: "Team incidents", icon: ClipboardList },
+  { href: "/map", label: "Emergency map", icon: Map },
+  { href: "/reports", label: "My history", icon: FileChartColumn },
+];
+
+const mobileResponderLinks = [
+  { href: "/", label: "Assignments", icon: Radio },
+  { href: "/map", label: "Map", icon: Map },
+  { href: "/reports", label: "History", icon: FileChartColumn },
+  { href: "/settings", label: "Profile", icon: UserRound },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -65,8 +80,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
   const unread = readableNotifications.filter((n) => !n.read).length;
   const pending = visibleIncidents.filter((i) => i.status === "Pending").length;
+  const navigation = isAdmin ? links : responderLinks;
+  const isCurrent = (href: string) =>
+    path === href ||
+    (href === "/incidents" && path.startsWith("/incidents/")) ||
+    (!isAdmin && href === "/" && path === "/assignments");
   const page =
-    links.find((l) => l.href === path)?.label ??
+    navigation.find((l) => l.href === path)?.label ??
+    (!isAdmin && path === "/assignments" ? "My assignments" : undefined) ??
     (path.startsWith("/incidents/") ? "Incident details" : "Settings");
 
   useEffect(() => {
@@ -83,7 +104,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }, [mobile, notifications, help]);
 
   return (
-    <div className={`app-shell ${collapsed ? "sidebar-collapsed" : ""}`}>
+    <div
+      className={`app-shell ${collapsed ? "sidebar-collapsed" : ""} ${isAdmin ? "admin-workspace" : "responder-shell"}`}
+    >
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
@@ -116,19 +139,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="nav-section-label">WORKSPACE</div>
         <nav>
-          {links.map(({ href, label, icon: Icon }) => (
+          {navigation.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
               title={collapsed ? label : undefined}
               onClick={() => setMobile(false)}
-              aria-current={
-                path === href ||
-                (href === "/incidents" && path.startsWith("/incidents/"))
-                  ? "page"
-                  : undefined
-              }
-              className={`nav-link ${path === href || (href === "/incidents" && path.startsWith("/incidents/")) ? "active" : ""}`}
+              aria-current={isCurrent(href) ? "page" : undefined}
+              className={`nav-link ${isCurrent(href) ? "active" : ""}`}
             >
               <Icon size={19} />
               <span>{label}</span>
@@ -157,7 +175,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             onClick={() => setMobile(false)}
           >
             <Settings size={19} />
-            <span>Settings</span>
+            <span>{isAdmin ? "Settings" : "My profile"}</span>
           </Link>
           <button className="nav-link" onClick={() => setHelp(!help)}>
             <CircleHelp size={19} />
@@ -355,6 +373,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </span>
         </footer>
       </div>
+      {!isAdmin && (
+        <nav
+          className="responder-mobile-nav"
+          aria-label="Responder quick navigation"
+        >
+          {mobileResponderLinks.map(({ href, label, icon: Icon }) => (
+            <Link
+              href={href}
+              key={href}
+              aria-current={isCurrent(href) ? "page" : undefined}
+              className={isCurrent(href) ? "active" : ""}
+              onClick={() => setMobile(false)}
+            >
+              <Icon size={21} />
+              <span>{label}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
       {toast && (
         <div className="toast" role="status">
           <span className="green-dot" />

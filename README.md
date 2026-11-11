@@ -35,6 +35,9 @@ npm start
 
 ## Implemented in Phase 1
 
+- Role-specific home screens: the administrator incident control centre combines the incident map, team availability, assignment shortcuts, and automatically refreshed pending wait times. Responder previews open directly to their personal assignments, with large response actions and phone navigation for assignments, map, history, and profile.
+- Responder maps default to personal assignments, with a team-view option. Responder history and exports contain their own assignments. Team incident browsing remains available separately.
+- Directions and coordinate-copy controls on assigned cards and incident details. Directions open Google Maps for the fictional position; unconfirmed coordinates show an unavailable state. Clipboard failures leave the coordinates visible for manual copying.
 - Responsive command-center interface, mobile navigation, collapsible sidebar, light and dark themes, and keyboard focus states.
 - Overview statistics, seven-day Recharts trends, category distribution, team readiness, active incident queue, and recent activity. All metrics are derived from the current training records.
 - Incident search, category/status/priority filters, sorting, pagination, and CSV export of matching records, with spreadsheet-formula escaping.
@@ -49,6 +52,8 @@ npm start
 ## Try the workflow
 
 The top banner includes **Preview as**. These are interface previews, **not authentication or backend authorization**.
+
+On the home page, selecting Alex or Nina opens **My assignments**. Use the main response button to advance the current assignment, or **Add response note** to open its notes. After resolution, the assignment moves into personal history. Return to Administrator preview for the incident control centre. Responder phone navigation remains available at the bottom of the screen.
 
 1. In **Administrator** preview, open **Incidents**, then `SERS-001`.
 2. Assign **Sarah Namuli** or **James Kato**, who initially have no active assignment. A responder must be active, on duty, on the correct team, and free of another active assignment.
@@ -107,7 +112,7 @@ npm run test:e2e
 
 Browser tests start the production server, so run the build first. They use `/usr/bin/google-chrome` if available, otherwise a Playwright Chromium installation. To install the latter, run `npx playwright install chromium`. An alternative browser executable can be supplied with `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
 
-The suite covers the incident lifecycle and persistence, team visibility and assignment controls, search/filter/pagination/export, cancellation with a reason, marker filtering, mobile navigation, theme persistence, and reset. Automated functional tests stub external map tiles to avoid dependence on third-party availability and repeated tile requests. Screenshot artifacts and the test report are written to ignored `test-results/` and `playwright-report/` directories.
+The suite covers the incident lifecycle and persistence, team visibility and assignment controls, search/filter/pagination/export, cancellation with a reason, marker filtering, mobile navigation, theme persistence, and reset. Role-workspace checks cover live wait-time updates, queue assignment and availability counts, responder status changes and notes, personal map/history scope, directions destinations, clipboard failure, and missing coordinates. Automated functional tests stub external map tiles to avoid dependence on third-party availability and repeated tile requests. Screenshot artifacts and the test report are written to ignored `test-results/` and `playwright-report/` directories.
 
 ## Limits and remaining phases
 

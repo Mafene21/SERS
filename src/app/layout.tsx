@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import { DemoProvider } from "@/components/demo-provider";
 import { Shell } from "@/components/shell";
+import { LiveClock } from "@/components/live-clock";
 
 export const metadata: Metadata = {
   title: { default: "SERS · Responder Dashboard", template: "%s · SERS" },
@@ -18,7 +19,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <DemoProvider>
-          <Shell>{children}</Shell>
+          <LiveClock>
+            <Shell>{children}</Shell>
+          </LiveClock>
         </DemoProvider>
       </body>
     </html>

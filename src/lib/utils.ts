@@ -36,6 +36,26 @@ export const validCoordinates = (
   Math.abs(coords[0]) <= 90 &&
   Math.abs(coords[1]) <= 180;
 
+export function elapsedTime(value: string, now: number) {
+  const minutes = Math.max(0, Math.floor((now - Date.parse(value)) / 60_000));
+  if (minutes < 1) return "Less than a minute";
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 1440)
+    return `${Math.floor(minutes / 60)} hr ${minutes % 60} min`;
+  return `${Math.floor(minutes / 1440)} d ${Math.floor((minutes % 1440) / 60)} hr`;
+}
+
+export const isTodayEAT = (value: string, now: number) => {
+  const day = (at: number) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Africa/Kampala",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(at));
+  return day(Date.parse(value)) === day(now);
+};
+
 // Decorative sparklines still use actual training-record counts grouped by report day.
 export function sparkPoints(records: Incident[], all: Incident[]) {
   const latest = all.length

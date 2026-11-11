@@ -40,6 +40,8 @@ import {
 import { noteSchema } from "@/lib/schemas";
 import { MapPanel } from "./map-panel";
 import type { Incident } from "@/lib/types";
+import { LocationActions } from "./location-actions";
+import { WaitingBadge } from "./live-clock";
 
 export function IncidentDetails({ id }: { id: string }) {
   const {
@@ -129,6 +131,9 @@ export function IncidentDetails({ id }: { id: string }) {
         <div>
           <StatusBadge status={incident.status} />
           <PriorityBadge priority={incident.priority} />
+          {incident.status === "Pending" && (
+            <WaitingBadge reportedAt={incident.reportedAt} />
+          )}
           <span className="detail-category">
             <CategoryIcon category={incident.category} size={15} />
             {incident.category}
@@ -196,8 +201,12 @@ export function IncidentDetails({ id }: { id: string }) {
               <MapPin size={17} />
             </div>
             <MapPanel incidents={[incident]} />
+            <LocationActions
+              key={incident.id}
+              coordinates={incident.coordinates}
+            />
           </section>
-          <section className="panel notes-panel">
+          <section className="panel notes-panel" id="response-notes">
             <div className="panel-heading">
               <div>
                 <h2>
@@ -255,7 +264,7 @@ export function IncidentDetails({ id }: { id: string }) {
           </section>
         </div>
         <aside className="detail-aside">
-          <section className="panel response-controls">
+          <section className="panel response-controls" id="response-management">
             <div className="panel-heading">
               <h2>Response management</h2>
               <Radio size={18} />

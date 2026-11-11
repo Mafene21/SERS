@@ -16,6 +16,7 @@ import { CATEGORIES, PRIORITIES, STATUSES, type Incident } from "@/lib/types";
 import { date, time, teamName, exportCSV } from "@/lib/utils";
 import { useDemo } from "./demo-provider";
 import { CategoryIcon, EmptyState, PriorityBadge, StatusBadge } from "./ui";
+import { WaitingBadge } from "./live-clock";
 
 export function IncidentTable({
   incidents,
@@ -26,7 +27,7 @@ export function IncidentTable({
   compact?: boolean;
   initialSearch?: string;
 }) {
-  const { state } = useDemo();
+  const { state, isAdmin } = useDemo();
   const [query, setQuery] = useState(initialSearch);
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
@@ -182,6 +183,7 @@ export function IncidentTable({
                 <th scope="col">Priority</th>
                 <th scope="col">Status</th>
                 <th scope="col">Responder</th>
+                <th scope="col">Waiting</th>
                 {!compact && <th scope="col">Reported</th>}
                 <th scope="col">
                   <span className="sr-only">View incident</span>
@@ -239,6 +241,13 @@ export function IncidentTable({
                         </span>
                       )}
                     </td>
+                    <td>
+                      {i.status === "Pending" ? (
+                        <WaitingBadge reportedAt={i.reportedAt} />
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
                     {!compact && (
                       <td>
                         <span className="table-date">
@@ -248,13 +257,23 @@ export function IncidentTable({
                       </td>
                     )}
                     <td>
-                      <Link
-                        className="icon-button"
-                        aria-label={`View ${i.reference}`}
-                        href={`/incidents/${i.id}`}
-                      >
-                        <ArrowUpRight size={18} />
-                      </Link>
+                      {compact && isAdmin && i.status === "Pending" ? (
+                        <Link
+                          className="button queue-assign"
+                          href={`/incidents/${i.id}#response-management`}
+                          aria-label={`${i.responderId ? "Reassign" : "Assign"} ${i.reference}`}
+                        >
+                          {i.responderId ? "Reassign" : "Assign"}
+                        </Link>
+                      ) : (
+                        <Link
+                          className="icon-button"
+                          aria-label={`View ${i.reference}`}
+                          href={`/incidents/${i.id}`}
+                        >
+                          <ArrowUpRight size={18} />
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 );

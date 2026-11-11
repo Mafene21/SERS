@@ -41,6 +41,7 @@ import {
 } from "@/lib/types";
 import { date, exportCSV, isActive, teamName } from "@/lib/utils";
 import { TrendsChart } from "./charts";
+import { ResponderHome } from "./responder-home";
 
 export function IncidentsPage() {
   const { visibleIncidents } = useDemo();
@@ -116,12 +117,14 @@ export function IncidentsPage() {
 }
 
 export function MapPage() {
-  const { visibleIncidents } = useDemo();
+  const { visibleIncidents, isAdmin, state } = useDemo();
+  const [scope, setScope] = useState("mine");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("active");
   const [priority, setPriority] = useState("");
   const incidents = visibleIncidents.filter(
     (i) =>
+      (isAdmin || scope === "team" || i.responderId === state.role) &&
       (!category || i.category === category) &&
       (!priority || i.priority === priority) &&
       (!status || (status === "active" ? isActive(i) : i.status === status)),
@@ -135,6 +138,19 @@ export function MapPage() {
       />
       <section className="panel map-page-panel">
         <div className="map-toolbar">
+          {!isAdmin && (
+            <label>
+              Show
+              <select
+                aria-label="Map scope"
+                value={scope}
+                onChange={(e) => setScope(e.target.value)}
+              >
+                <option value="mine">My assignments</option>
+                <option value="team">My team</option>
+              </select>
+            </label>
+          )}
           <label>
             Category
             <select
@@ -235,6 +251,11 @@ export function MapPage() {
 }
 
 export function AssignmentsPage() {
+  const { isAdmin, state } = useDemo();
+  return isAdmin ? <AssignedResponses /> : <ResponderHome key={state.role} />;
+}
+
+function AssignedResponses() {
   const { state, visibleIncidents, isAdmin, transition, notify } = useDemo();
   const [tab, setTab] = useState("active");
   const assigned = visibleIncidents.filter((i) =>
@@ -647,8 +668,11 @@ export function RespondersPage() {
 }
 
 export function ReportsPage() {
-  const { visibleIncidents } = useDemo();
-  const closed = visibleIncidents.filter((i) => !isActive(i));
+  const { visibleIncidents, isAdmin, state } = useDemo();
+  const records = visibleIncidents.filter(
+    (i) => isAdmin || i.responderId === state.role,
+  );
+  const closed = records.filter((i) => !isActive(i));
   const resolved = closed.filter((i) => i.status === "Resolved");
   const average = resolved.length
     ? Math.round(
@@ -666,8 +690,12 @@ export function ReportsPage() {
     <div className="reports-page">
       <PageHeader
         eyebrow="RECORDS & INSIGHTS"
-        title="History & reports"
-        description="Review completed responses and understand your incident trends."
+        title={isAdmin ? "History & reports" : "My response history"}
+        description={
+          isAdmin
+            ? "Review completed responses and understand your incident trends."
+            : "Your own completed assignments, notes, and response records."
+        }
       >
         <button className="button" onClick={() => window.print()}>
           <Printer size={16} />
@@ -714,7 +742,7 @@ export function ReportsPage() {
           </div>
           <span className="training-tag">SIMULATED DATA</span>
         </div>
-        <TrendsChart incidents={visibleIncidents} />
+        <TrendsChart incidents={records} />
       </section>
       <section className="panel">
         <div className="panel-heading">

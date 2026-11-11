@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   CheckCheck,
   CircleAlert,
-  ClipboardList,
   Clock3,
   Radio,
   Users,
@@ -24,9 +23,12 @@ import { SimulateButton } from "./report-dialog";
 import { MapPanel } from "./map-panel";
 import { CategoryDistribution, TrendsChart } from "./charts";
 import { IncidentTable } from "./incident-table";
+import { ResponderHome } from "./responder-home";
+import { CATEGORIES } from "@/lib/types";
 
 export function Overview() {
-  const { visibleIncidents: incidents, state, isAdmin, actor } = useDemo();
+  const { visibleIncidents: incidents, state, isAdmin } = useDemo();
+  if (!isAdmin) return <ResponderHome key={state.role} />;
   const active = incidents.filter(isActive);
   const pending = incidents.filter((i) => i.status === "Pending");
   const responding = incidents.filter(
@@ -36,12 +38,7 @@ export function Overview() {
   const urgent = active.filter(
     (i) => i.priority === "Critical" || i.priority === "High",
   );
-  const team = state.responders.filter(
-    (r) =>
-      isAdmin ||
-      r.category ===
-        state.responders.find((p) => p.id === state.role)?.category,
-  );
+  const team = state.responders;
   const available = team.filter(
     (r) =>
       r.active &&
@@ -58,16 +55,8 @@ export function Overview() {
       })),
     )
     .sort((a, b) => b.at.localeCompare(a.at))
-    .slice(0, 4);
+    .slice(0, 3);
   const stats = [
-    {
-      label: "Total incidents",
-      value: incidents.length,
-      icon: ClipboardList,
-      color: "neutral",
-      description: "All training records",
-      spark: sparkPoints(incidents, incidents),
-    },
     {
       label: "Pending incidents",
       value: pending.length,
@@ -85,6 +74,14 @@ export function Overview() {
       spark: sparkPoints(responding, incidents),
     },
     {
+      label: "Available responders",
+      value: available.length,
+      icon: Users,
+      color: "green",
+      description: "Active, on duty & unassigned",
+      spark: undefined,
+    },
+    {
       label: "Resolved incidents",
       value: resolved.length,
       icon: ShieldCheck,
@@ -94,15 +91,11 @@ export function Overview() {
     },
   ];
   return (
-    <>
+    <div className="control-centre">
       <PageHeader
         eyebrow="RESPONSE COMMAND CENTER"
-        title={isAdmin ? "Operational overview" : `Your response overview`}
-        description={
-          isAdmin
-            ? "A clear view of every incident. A coordinated response, every time."
-            : `Welcome back, ${actor.split(" ")[0]}. Your team’s incidents and response activity.`
-        }
+        title="Incident control centre"
+        description="Coordinate incoming reports, available teams, and every active response."
       >
         <button className="button" onClick={() => exportCSV(incidents)}>
           <ArrowDownToLine size={16} />
@@ -132,9 +125,11 @@ export function Overview() {
               </div>
               <div className="stat-value">
                 <strong>{String(value).padStart(2, "0")}</strong>
-                <svg viewBox="0 0 84 32" aria-hidden="true">
-                  <polyline points={spark} />
-                </svg>
+                {spark && (
+                  <svg viewBox="0 0 84 32" aria-hidden="true">
+                    <polyline points={spark} />
+                  </svg>
+                )}
               </div>
               <div className="stat-description">
                 <span className={`mini-dot ${color}`} />
@@ -194,50 +189,93 @@ export function Overview() {
             <span className="map-active-count">{active.length} active</span>
           </div>
         </section>
-        <section className="panel activity-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>Recent activity</h2>
-              <p>The latest from your response team</p>
+        <div className="control-centre-side">
+          <section className="panel team-availability">
+            <div className="panel-heading">
+              <div>
+                <h2>Team availability</h2>
+                <p>On-duty responders ready for assignment</p>
+              </div>
+              <Users size={18} />
             </div>
-            <span className="subtle-icon">
-              <Radio size={16} />
-            </span>
-          </div>
-          <div className="activity-list">
-            {events.map((e, index) => (
-              <Link
-                href={`/incidents/${e.incidentId}`}
-                className="activity-row"
-                key={`${e.incidentId}-${e.id}`}
-              >
-                <div
-                  className={`activity-marker ${e.kind === "report" ? "red" : e.kind === "status" ? "green" : "blue"}`}
+            {CATEGORIES.map((category) => {
+              const members = team.filter((r) => r.category === category);
+              const ready = available.filter(
+                (r) => r.category === category,
+              ).length;
+              const onDuty = members.filter(
+                (r) => r.active && r.availability !== "Off duty",
+              ).length;
+              return (
+                <div className="team-availability-row" key={category}>
+                  <span
+                    className={`category-icon ${category === "Fire Outbreak" ? "fire" : "road"}`}
+                  >
+                    {category === "Fire Outbreak" ? (
+                      <Flame size={18} />
+                    ) : (
+                      <CarFront size={18} />
+                    )}
+                  </span>
+                  <strong>
+                    {category === "Fire Outbreak"
+                      ? "Fire response"
+                      : "Road response"}
+                    <small>On duty: {onDuty}</small>
+                  </strong>
+                  <span className="team-ready-count">{ready} available</span>
+                </div>
+              );
+            })}
+            <Link href="/responders" className="panel-footer-link">
+              Manage response teams <ArrowRight size={15} />
+            </Link>
+          </section>
+          <section className="panel activity-panel">
+            <div className="panel-heading">
+              <div>
+                <h2>Recent activity</h2>
+                <p>The latest from your response team</p>
+              </div>
+              <span className="subtle-icon">
+                <Radio size={16} />
+              </span>
+            </div>
+            <div className="activity-list">
+              {events.map((e, index) => (
+                <Link
+                  href={`/incidents/${e.incidentId}`}
+                  className="activity-row"
+                  key={`${e.incidentId}-${e.id}`}
                 >
-                  {e.kind === "report" ? (
-                    <CircleAlert size={15} />
-                  ) : e.kind === "status" ? (
-                    <CheckCheck size={15} />
-                  ) : (
-                    <Users size={15} />
-                  )}
-                  {index < events.length - 1 && <span />}
-                </div>
-                <div>
-                  <strong>{e.title}</strong>
-                  <p>
-                    {e.reference} <span>· {e.category}</span>
-                  </p>
-                  <small>{time(e.at)} EAT</small>
-                </div>
-                <ChevronRight size={14} />
-              </Link>
-            ))}
-          </div>
-          <Link href="/reports" className="panel-footer-link">
-            View response history <ArrowRight size={15} />
-          </Link>
-        </section>
+                  <div
+                    className={`activity-marker ${e.kind === "report" ? "red" : e.kind === "status" ? "green" : "blue"}`}
+                  >
+                    {e.kind === "report" ? (
+                      <CircleAlert size={15} />
+                    ) : e.kind === "status" ? (
+                      <CheckCheck size={15} />
+                    ) : (
+                      <Users size={15} />
+                    )}
+                    {index < events.length - 1 && <span />}
+                  </div>
+                  <div>
+                    <strong>{e.title}</strong>
+                    <p>
+                      {e.reference} <span>· {e.category}</span>
+                    </p>
+                    <small>{time(e.at)} EAT</small>
+                  </div>
+                  <ChevronRight size={14} />
+                </Link>
+              ))}
+            </div>
+            <Link href="/reports" className="panel-footer-link">
+              View response history <ArrowRight size={15} />
+            </Link>
+          </section>
+        </div>
       </div>
       <section className="panel queue-panel">
         <div className="panel-heading">
@@ -252,12 +290,7 @@ export function Overview() {
             View all incidents <ArrowRight size={15} />
           </Link>
         </div>
-        <IncidentTable
-          incidents={[...active].sort((a, b) =>
-            a.priority.localeCompare(b.priority),
-          )}
-          compact
-        />
+        <IncidentTable incidents={active} compact />
       </section>
       <div className="analytics-grid">
         <section className="panel">
@@ -291,55 +324,7 @@ export function Overview() {
           </div>
           <CategoryDistribution incidents={incidents} />
         </section>
-        <section className="panel availability-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>Team readiness</h2>
-              <p>Ready for the next response</p>
-            </div>
-            <Users size={17} />
-          </div>
-          <div className="readiness-count">
-            <strong>{String(available.length).padStart(2, "0")}</strong>
-            <span>
-              <span className="green-dot" />
-              responders available
-            </span>
-          </div>
-          <div className="readiness-bar">
-            {team.map((r) => (
-              <span
-                key={r.id}
-                className={
-                  available.some((a) => a.id === r.id)
-                    ? "ready"
-                    : r.availability === "Off duty" || !r.active
-                      ? "off"
-                      : "busy"
-                }
-                title={`${r.name}: ${available.some((a) => a.id === r.id) ? "Available" : r.availability}`}
-              />
-            ))}
-          </div>
-          <div className="readiness-legend">
-            <span>
-              <i className="legend-dot green" />
-              Available {available.length}
-            </span>
-            <span>
-              <i className="legend-dot amber" />
-              Assigned{" "}
-              {
-                team.filter((r) => active.some((i) => i.responderId === r.id))
-                  .length
-              }
-            </span>
-          </div>
-          <Link href="/responders" className="panel-footer-link">
-            View response teams <ArrowRight size={15} />
-          </Link>
-        </section>
       </div>
-    </>
+    </div>
   );
 }
