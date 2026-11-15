@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#123a3b" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <meta
+      name="description"
+      content="Report road accidents and fire outbreaks to the Smart Emergency Response System."
+    />
+    <title>SERS · Emergency reporting</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./config.local.js"></script>
+    <script type="module" src="./js/app.js"></script>
+  </head>
+  <body>
+    <div id="app" aria-live="polite">
+      <main class="boot-screen"><span class="brand-mark">S</span><p>Opening SERS…</p></main>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

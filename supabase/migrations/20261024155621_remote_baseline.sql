@@ -1,0 +1,2 @@
+-- Migration-history marker for the original Schoolspace/SERS database baseline.
+-- This version was applied remotely before its SQL was tracked in this repository.

@@ -4,6 +4,13 @@ SERS is a staff website for coordinating road accident and fire incident reports
 
 Open [SERS on Vercel](https://sers-mafene21-5969.vercel.app/). [GitHub Pages](https://mafene21.github.io/SERS/) redirects to the same application. GitHub `main` deploys automatically to the existing Vercel project.
 
+The public reporting website lives separately in `citizen-app/`. It lets a
+citizen submit a road accident or fire outbreak with location and an optional
+photo, then track the response using a private reference and tracking code.
+Public reports enter the same incident workflow used by the responder and
+administrator dashboards; reporter contact details remain restricted to
+authorized staff.
+
 ## Administrator setup
 
 The first administrator email has been approved in the database. Use the private administrator setup file supplied during installation to choose a password of at least 12 characters. Keep that file private and delete it after activation. Email activation is also available when your email sender is configured. No initial password or activation token is stored in this repository.

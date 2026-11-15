@@ -43,6 +43,7 @@ import { MapPanel } from "./map-panel";
 import type { Incident } from "@/lib/types";
 import { LocationActions } from "./location-actions";
 import { WaitingBadge } from "./live-clock";
+import { CitizenReporter } from "./citizen-reporter";
 
 export function IncidentDetails({ id }: { id: string }) {
   const {
@@ -274,6 +275,7 @@ export function IncidentDetails({ id }: { id: string }) {
           </section>
         </div>
         <aside className="detail-aside">
+          {!isDemo && <CitizenReporter incidentId={incident.id} />}
           <section className="panel response-controls" id="response-management">
             <div className="panel-heading">
               <h2>Response management</h2>
