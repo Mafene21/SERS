@@ -7,7 +7,6 @@ export default defineConfig([
   ...nextTs,
   globalIgnores([
     ".next/**",
-    "citizen-app/**",
     "out/**",
     "next-env.d.ts",
     "playwright-report/**",

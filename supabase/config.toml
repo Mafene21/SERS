@@ -6,8 +6,3 @@ project_id = "sers"
 verify_jwt = false
 entrypoint = "./functions/sers-account-link/index.ts"
 import_map = "./functions/sers-account-link/deno.json"
-
-[functions.sers-citizen]
-verify_jwt = false
-entrypoint = "./functions/sers-citizen/index.ts"
-import_map = "./functions/sers-citizen/deno.json"
