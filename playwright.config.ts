@@ -9,6 +9,7 @@ export default defineConfig({
   fullyParallel: !process.env.SERS_INTEGRATION_ACCOUNTS,
   workers: process.env.SERS_INTEGRATION_ACCOUNTS ? 1 : 2,
   retries: 0,
+  expect: { timeout: process.env.SERS_INTEGRATION_ACCOUNTS ? 15_000 : 5_000 },
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://127.0.0.1:3000",

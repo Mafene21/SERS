@@ -6,7 +6,7 @@ Open [SERS on Vercel](https://sers-mafene21-5969.vercel.app/). [GitHub Pages](ht
 
 ## Administrator setup
 
-The first administrator email has been approved in the database. Open **Activate approved account** on the sign-in page, choose a password of at least 12 characters, confirm your email, and sign in. No initial password is stored in this repository.
+The first administrator email has been approved in the database. Use the private administrator setup file supplied during installation to choose a password of at least 12 characters. Keep that file private and delete it after activation. Email activation is also available when your email sender is configured. No initial password or activation token is stored in this repository.
 
 In **Response teams → Staff accounts**, approve staff with their name, email, role and response team. Create an **Activation link** and share it privately with the intended account holder. They open the single-use link and choose their own password. **Reset link** provides the same private delivery option for password recovery. Links confer account access: keep them out of public messages, screenshots and logs.
 
@@ -60,7 +60,7 @@ Supabase Authentication URL configuration:
 - Redirect URL: `https://sers-mafene21-5969.vercel.app/auth/callback`
 - Redirect URL: `https://sers-mafene21-5969.vercel.app/auth/callback?next=/recover`
 
-Do not connect arbitrary preview deployments to production credentials. Existing Vercel preview protection is retained.
+Vercel Functions run in Frankfurt (`fra1`), close to the reused Supabase project in `eu-central-1`, to reduce database round trips. Do not connect arbitrary preview deployments to production credentials. Existing Vercel preview protection is retained.
 
 ## Validation
 
