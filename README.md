@@ -20,7 +20,7 @@ Staff can also activate through email confirmation and request emailed password 
 - Responders see records for their approved team or teams and can accept, respond to, resolve and add notes to their own active assignments. A responder covering both fire and road still has one login and one active assignment at a time across both teams.
 - Shared incident records, recorded coordinates, staff availability, append-only timelines and in-app activity notifications. Preferences and read notifications belong to the signed-in account.
 - Database rules reject cross-team assignments, skipped workflow states, changes to closed incidents, and multiple active assignments for one responder. Deactivation immediately removes access even from an existing token.
-- Manual refresh, refresh on window focus and polling every 30 seconds. WebSocket updates, phone GPS tracking, SMS/push notifications and the citizen app remain later integrations.
+- Manual refresh, refresh on window focus and polling every 30 seconds. WebSocket updates, phone GPS tracking and SMS/push notifications remain later integrations.
 - The existing map uses Leaflet and OpenStreetMap. New reports may include confirmed latitude and longitude; missing coordinates are never replaced with an invented incident position.
 - No fictional incidents are seeded into the shared database. Local training fixtures remain available only through explicit local demo mode.
 
