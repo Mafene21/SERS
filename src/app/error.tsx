@@ -4,8 +4,8 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
     <div className="empty-state" role="alert">
       <h1>We couldn’t load this view.</h1>
       <p>
-        Your saved training records remain in this browser. Try loading the view
-        again.
+        Try loading the view again. Check your connection if the problem
+        continues.
       </p>
       <button className="button primary" onClick={reset}>
         Try again

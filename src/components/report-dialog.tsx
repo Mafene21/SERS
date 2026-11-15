@@ -12,13 +12,13 @@ import { useDemo } from "./demo-provider";
 
 export function SimulateButton() {
   const [open, setOpen] = useState(false);
-  const { isAdmin } = useDemo();
+  const { isAdmin, isDemo } = useDemo();
   if (!isAdmin) return null;
   return (
     <>
       <button className="button primary" onClick={() => setOpen(true)}>
         <Plus size={17} />
-        Simulate incident
+        {isDemo ? "Simulate incident" : "Record incident"}
       </button>
       {open && <ReportDialog onClose={() => setOpen(false)} />}
     </>
@@ -26,19 +26,23 @@ export function SimulateButton() {
 }
 
 function ReportDialog({ onClose }: { onClose: () => void }) {
-  const { simulate } = useDemo();
+  const { simulate, isDemo, busy } = useDemo();
   const router = useRouter();
   const [error, setError] = useState("");
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ReportInput>({
     resolver: zodResolver(reportSchema),
     defaultValues: { category: "Road Accident", priority: "High" },
   });
-  function submit(value: ReportInput) {
-    const result = simulate(value);
+  async function submit(value: ReportInput) {
+    if ((value.latitude == null) !== (value.longitude == null)) {
+      setError("Enter both latitude and longitude, or leave both empty.");
+      return;
+    }
+    const result = await simulate(value);
     if (!result.ok) {
       setError(result.error);
       return;
@@ -48,15 +52,20 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
   }
   return (
     <Modal
-      title="Simulate an incident"
-      description="Create a fictional report to try the response workflow."
+      title={isDemo ? "Simulate an incident" : "Record an incident"}
+      description={
+        isDemo
+          ? "Create a fictional report to try the response workflow."
+          : "Record a report for your response team to review and assign."
+      }
       onClose={onClose}
     >
       <div className="info-callout">
         <FlaskConical size={18} />
         <span>
-          Training only. This form does not contact emergency services. New
-          reports start without confirmed coordinates.
+          {isDemo
+            ? "Training only. This form does not contact emergency services. New reports start without confirmed coordinates."
+            : "Check the report details before saving. Coordinates are optional; enter them only when the location has been confirmed."}
         </span>
       </div>
       <form onSubmit={handleSubmit(submit)} className="form-stack">
@@ -64,7 +73,11 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
           Incident title
           <input
             {...register("title")}
-            placeholder="e.g. Training vehicle collision"
+            placeholder={
+              isDemo
+                ? "e.g. Training vehicle collision"
+                : "e.g. Vehicle collision on Jinja Road"
+            }
             aria-invalid={!!errors.title}
           />
           {errors.title && (
@@ -93,19 +106,59 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
           Location label
           <input
             {...register("location")}
-            placeholder="e.g. Kampala training area"
+            placeholder={
+              isDemo ? "e.g. Kampala training area" : "e.g. Jinja Road, Nakawa"
+            }
             aria-invalid={!!errors.location}
           />
           {errors.location && (
             <span className="field-error">{errors.location.message}</span>
           )}
         </label>
+        {!isDemo && (
+          <div className="form-grid">
+            <label>
+              Latitude
+              <input
+                type="number"
+                step="any"
+                min={-90}
+                max={90}
+                {...register("latitude", {
+                  setValueAs: (v) => (v === "" ? null : Number(v)),
+                })}
+              />
+              {errors.latitude && (
+                <span className="field-error">{errors.latitude.message}</span>
+              )}
+            </label>
+            <label>
+              Longitude
+              <input
+                type="number"
+                step="any"
+                min={-180}
+                max={180}
+                {...register("longitude", {
+                  setValueAs: (v) => (v === "" ? null : Number(v)),
+                })}
+              />
+              {errors.longitude && (
+                <span className="field-error">{errors.longitude.message}</span>
+              )}
+            </label>
+          </div>
+        )}
         <label>
           Description
           <textarea
             {...register("description")}
             rows={3}
-            placeholder="Describe the fictional incident…"
+            placeholder={
+              isDemo
+                ? "Describe the fictional incident…"
+                : "Describe the incident and help required…"
+            }
             aria-invalid={!!errors.description}
           />
           {errors.description && (
@@ -121,8 +174,16 @@ function ReportDialog({ onClose }: { onClose: () => void }) {
           <button type="button" className="button" onClick={onClose}>
             Cancel
           </button>
-          <button className="button primary" type="submit">
-            Create training incident
+          <button
+            className="button primary"
+            type="submit"
+            disabled={busy || isSubmitting}
+          >
+            {isSubmitting
+              ? "Saving…"
+              : isDemo
+                ? "Create training incident"
+                : "Save incident"}
           </button>
         </div>
       </form>

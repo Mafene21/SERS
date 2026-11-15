@@ -85,7 +85,11 @@ const savedSchema = z.object({
   ),
 });
 
-interface DemoContextValue {
+export interface DemoContextValue {
+  isDemo: boolean;
+  busy: boolean;
+  refresh: () => Promise<void>;
+  signOut: () => Promise<void>;
   state: DemoState;
   visibleIncidents: Incident[];
   hydrated: boolean;
@@ -95,22 +99,31 @@ interface DemoContextValue {
   toast: string | null;
   notify: (message: string) => void;
   setRole: (role: ViewRole) => void;
-  assign: (id: string, responderId: string) => ActionResult;
+  assign: (
+    id: string,
+    responderId: string,
+  ) => ActionResult | Promise<ActionResult>;
   transition: (
     id: string,
     status: IncidentStatus,
     reason?: string,
-  ) => ActionResult;
-  addNote: (id: string, note: string) => ActionResult;
-  simulate: (input: ReportInput) => ActionResult;
-  setAvailability: (id: string, availability: Availability) => ActionResult;
-  setActive: (id: string, active: boolean) => ActionResult;
+  ) => ActionResult | Promise<ActionResult>;
+  addNote: (id: string, note: string) => ActionResult | Promise<ActionResult>;
+  simulate: (input: ReportInput) => ActionResult | Promise<ActionResult>;
+  setAvailability: (
+    id: string,
+    availability: Availability,
+  ) => ActionResult | Promise<ActionResult>;
+  setActive: (
+    id: string,
+    active: boolean,
+  ) => ActionResult | Promise<ActionResult>;
   updatePreferences: (value: Partial<Preferences>) => void;
   readNotifications: () => void;
   reset: () => void;
 }
 
-const DemoContext = createContext<DemoContextValue | null>(null);
+export const DemoContext = createContext<DemoContextValue | null>(null);
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
   const [state, replace] = useReducer(
@@ -467,6 +480,10 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   return (
     <DemoContext.Provider
       value={{
+        isDemo: true,
+        busy: false,
+        refresh: async () => {},
+        signOut: async () => {},
         state,
         hydrated,
         storageError,

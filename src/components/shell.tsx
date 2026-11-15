@@ -27,6 +27,8 @@ import {
   CircleHelp,
   CheckCheck,
   UserRound,
+  LogOut,
+  RefreshCw,
 } from "lucide-react";
 import { useDemo } from "./demo-provider";
 import { date, time } from "@/lib/utils";
@@ -69,6 +71,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     hydrated,
     storageError,
     toast,
+    isDemo,
+    busy,
+    refresh,
+    signOut,
   } = useDemo();
   const [mobile, setMobile] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -157,18 +163,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="training-card">
-            <span className="training-icon">
-              <FlaskConical size={19} />
-            </span>
-            <strong>A space to prepare.</strong>
-            <p>
-              Practice the response.
-              <br />
-              Be ready for what matters.
-            </p>
-            <span className="training-tag">TRAINING WORKSPACE</span>
-          </div>
+          {isDemo && (
+            <div className="training-card">
+              <span className="training-icon">
+                <FlaskConical size={19} />
+              </span>
+              <strong>A space to prepare.</strong>
+              <p>
+                Practice the response.
+                <br />
+                Be ready for what matters.
+              </p>
+              <span className="training-tag">TRAINING WORKSPACE</span>
+            </div>
+          )}
           <Link
             className={`nav-link ${path === "/settings" ? "active" : ""}`}
             href="/settings"
@@ -181,10 +189,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <CircleHelp size={19} />
             <span>Help & information</span>
           </button>
+          {!isDemo && (
+            <button
+              className="nav-link"
+              disabled={busy}
+              onClick={() => void signOut()}
+            >
+              <LogOut size={19} />
+              <span>Sign out</span>
+            </button>
+          )}
           <div className="sidebar-footer">
             <span>
               <span className="green-dot" />
-              Demo mode
+              {isDemo ? "Demo mode" : "Shared workspace"}
             </span>
             <button
               className="icon-button"
@@ -216,6 +234,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <strong>{page}</strong>
           </div>
           <div className="topbar-actions">
+            {!isDemo && (
+              <button
+                className="icon-button"
+                aria-label="Refresh shared records"
+                disabled={busy}
+                onClick={() => void refresh()}
+              >
+                <RefreshCw size={18} />
+              </button>
+            )}
             <form
               className="global-search"
               role="search"
@@ -260,7 +288,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="topbar-separator" />
             <div className="profile-avatar">
               {isAdmin
-                ? "JW"
+                ? actor
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
                 : state.responders.find((r) => r.id === state.role)?.initials}
             </div>
             <div className="profile-summary">
@@ -286,7 +319,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </button>
               </div>
               <p className="small-note">
-                Simulated activity ·{" "}
+                {isDemo ? "Simulated activity" : "Shared activity"} ·{" "}
                 {state.preferences.notifications
                   ? "alerts enabled"
                   : "alerts muted"}
@@ -317,34 +350,48 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </div>
           )}
         </header>
-        <div className="demo-banner">
-          <div>
-            <FlaskConical size={14} />
-            <span>
-              <strong>Demonstration workspace</strong>
-              <span className="banner-detail">
-                {" "}
-                · All incidents and people are fictional. No emergency services
-                are contacted.
+        {isDemo ? (
+          <div className="demo-banner">
+            <div>
+              <FlaskConical size={14} />
+              <span>
+                <strong>Demonstration workspace</strong>
+                <span className="banner-detail">
+                  {" "}
+                  · All incidents and people are fictional. No emergency
+                  services are contacted.
+                </span>
               </span>
+            </div>
+            <label className="role-select">
+              <span>Preview as</span>
+              <select
+                aria-label="Preview role"
+                value={state.role}
+                onChange={(e) => {
+                  setRole(e.target.value as ViewRole);
+                  setNotifications(false);
+                }}
+              >
+                <option value="admin">Administrator</option>
+                <option value="road-1">Alex · Road responder</option>
+                <option value="fire-1">Nina · Fire responder</option>
+              </select>
+            </label>
+          </div>
+        ) : (
+          <div className="live-banner">
+            <span>
+              <ShieldPlus size={15} />
+              Approved staff workspace
+            </span>
+            <span>
+              {busy
+                ? "Saving change…"
+                : "Shared records · refreshes every 30 seconds"}
             </span>
           </div>
-          <label className="role-select">
-            <span>Preview as</span>
-            <select
-              aria-label="Preview role"
-              value={state.role}
-              onChange={(e) => {
-                setRole(e.target.value as ViewRole);
-                setNotifications(false);
-              }}
-            >
-              <option value="admin">Administrator</option>
-              <option value="road-1">Alex · Road responder</option>
-              <option value="fire-1">Nina · Fire responder</option>
-            </select>
-          </label>
-        </div>
+        )}
         {storageError && (
           <div className="storage-warning" role="status">
             {storageError}
@@ -356,7 +403,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ) : (
             <div className="page-loading">
               <Activity size={26} />
-              <span>Preparing your training workspace…</span>
+              <span>Preparing your workspace…</span>
               <div className="skeleton" />
             </div>
           )}
@@ -368,7 +415,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </span>
           <span>
             <span className="green-dot" />
-            {hydrated ? "Local demo" : "Loading"}
+            {hydrated ? (isDemo ? "Local demo" : "Shared records") : "Loading"}
             <span className="footer-divider">·</span>East Africa Time (UTC+3)
           </span>
         </footer>
@@ -414,16 +461,33 @@ export function Shell({ children }: { children: React.ReactNode }) {
             SERS is a university project for coordinating road accident and fire
             responses.
           </p>
-          <p>
-            Use <strong>Preview as</strong> to try administrator and responder
-            views. Administrators assign incidents; responders update their own
-            assignments.
-          </p>
-          <p>
-            Changes are saved in this browser. Reset the demonstration in
-            Settings. Authentication, shared records, and live dispatch are
-            outside Phase 1.
-          </p>
+          {isDemo ? (
+            <>
+              <p>
+                Use <strong>Preview as</strong> to try administrator and
+                responder views. Administrators assign incidents; responders
+                update their own assignments.
+              </p>
+              <p>
+                Changes are saved in this browser. Reset the demonstration in
+                Settings. Authentication, shared records, and live dispatch are
+                outside Phase 1.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                Administrators approve staff accounts and assign incidents.
+                Responders update their own assignments. Team access and account
+                permissions are checked by the database.
+              </p>
+              <p>
+                Changes are saved to shared records. Use the refresh button for
+                the latest updates; this workspace also refreshes every 30
+                seconds.
+              </p>
+            </>
+          )}
           <Link
             href="/settings"
             className="text-link"

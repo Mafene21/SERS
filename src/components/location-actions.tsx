@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Check, Copy, Navigation } from "lucide-react";
 import type { Incident } from "@/lib/types";
 import { validCoordinates } from "@/lib/utils";
+import { useDemo } from "./demo-provider";
 
 export function LocationActions({
   coordinates,
 }: Pick<Incident, "coordinates">) {
   const [message, setMessage] = useState("");
+  const { isDemo } = useDemo();
   if (!validCoordinates(coordinates))
     return (
       <p className="location-unavailable">
@@ -30,7 +32,11 @@ export function LocationActions({
           href={`https://www.google.com/maps/dir/?${params}`}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Directions to fictional location (opens Google Maps)"
+          aria-label={
+            isDemo
+              ? "Directions to fictional location (opens Google Maps)"
+              : "Directions to incident location (opens Google Maps)"
+          }
         >
           <Navigation size={17} /> Directions
         </a>
@@ -52,7 +58,8 @@ export function LocationActions({
         </button>
       </div>
       <p className="location-caption">
-        Fictional training location · Directions open Google Maps.
+        {isDemo ? "Fictional training location · " : ""}Directions open Google
+        Maps.
       </p>
       <p className="location-feedback" role="status">
         {message}

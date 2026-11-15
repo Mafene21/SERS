@@ -52,6 +52,8 @@ export function IncidentDetails({ id }: { id: string }) {
     assign,
     transition,
     addNote,
+    isDemo,
+    busy,
   } = useDemo();
   const incident = visibleIncidents.find((i) => i.id === id);
   const [selectedResponder, setSelectedResponder] = useState("");
@@ -62,7 +64,7 @@ export function IncidentDetails({ id }: { id: string }) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<{ note: string }>({ resolver: zodResolver(noteSchema) });
   if (!incident)
     return (
@@ -73,7 +75,7 @@ export function IncidentDetails({ id }: { id: string }) {
         </Link>
         <EmptyState
           title="Incident unavailable"
-          description="This incident may belong to another team or may have been removed when the demonstration was reset."
+          description="This incident is unavailable or belongs to another response team."
         />
       </>
     );
@@ -85,6 +87,7 @@ export function IncidentDetails({ id }: { id: string }) {
     (r) =>
       r.category === incident.category &&
       r.active &&
+      r.enrolled !== false &&
       r.availability !== "Off duty" &&
       !state.incidents.some(
         (i) => i.id !== incident.id && isActive(i) && i.responderId === r.id,
@@ -98,14 +101,14 @@ export function IncidentDetails({ id }: { id: string }) {
     Cancelled: "Cancel",
   };
   const notes = incident.timeline.filter((e) => e.kind === "note");
-  function update() {
+  async function update() {
     if (!incident || !next) return;
-    const result = transition(incident.id, next);
+    const result = await transition(incident.id, next);
     setError(result.ok ? "" : result.error);
   }
-  function submitNote(value: { note: string }) {
+  async function submitNote(value: { note: string }) {
     if (!incident) return;
-    const result = addNote(incident.id, value.note);
+    const result = await addNote(incident.id, value.note);
     if (result.ok) {
       reset();
       setError("");
@@ -118,7 +121,7 @@ export function IncidentDetails({ id }: { id: string }) {
         Back to incidents
       </Link>
       <PageHeader
-        eyebrow={`${incident.reference} · SIMULATED INCIDENT`}
+        eyebrow={`${incident.reference} · ${isDemo ? "SIMULATED INCIDENT" : "INCIDENT RECORD"}`}
         title={incident.title}
         description={`${incident.category} · Reported ${date(incident.reportedAt)} at ${time(incident.reportedAt)} EAT`}
       >
@@ -149,7 +152,7 @@ export function IncidentDetails({ id }: { id: string }) {
           <section className="panel detail-description">
             <div className="panel-heading">
               <h2>Incident information</h2>
-              <span className="training-tag">TRAINING DATA</span>
+              {isDemo && <span className="training-tag">TRAINING DATA</span>}
             </div>
             <p>{incident.description}</p>
             <div className="detail-facts">
@@ -194,8 +197,10 @@ export function IncidentDetails({ id }: { id: string }) {
                 <h2>Incident location</h2>
                 <p>
                   {validCoordinates(incident.coordinates)
-                    ? "Fictional training position on a real basemap"
-                    : "No confirmed coordinates; the map shows the training area"}
+                    ? isDemo
+                      ? "Fictional training position on a real basemap"
+                      : "Recorded incident coordinates on the map"
+                    : "No confirmed coordinates; the map shows the surrounding area"}
                 </p>
               </div>
               <MapPin size={17} />
@@ -248,7 +253,11 @@ export function IncidentDetails({ id }: { id: string }) {
                   {errors.note && (
                     <span className="field-error">{errors.note.message}</span>
                   )}
-                  <button className="button primary" type="submit">
+                  <button
+                    className="button primary"
+                    type="submit"
+                    disabled={busy || isSubmitting}
+                  >
                     <Send size={15} />
                     Add note
                   </button>
@@ -314,9 +323,12 @@ export function IncidentDetails({ id }: { id: string }) {
                   </select>
                   <button
                     className="button"
-                    disabled={!selectedResponder}
-                    onClick={() => {
-                      const result = assign(incident.id, selectedResponder);
+                    disabled={!selectedResponder || busy}
+                    onClick={async () => {
+                      const result = await assign(
+                        incident.id,
+                        selectedResponder,
+                      );
                       setError(result.ok ? "" : result.error);
                       if (result.ok) setSelectedResponder("");
                     }}
@@ -353,7 +365,7 @@ export function IncidentDetails({ id }: { id: string }) {
               {canUpdate && next && (
                 <button
                   className="button primary full-width"
-                  disabled={!incident.responderId}
+                  disabled={!incident.responderId || busy}
                   onClick={update}
                 >
                   {next === "Resolved" ? (
@@ -406,7 +418,7 @@ export function IncidentDetails({ id }: { id: string }) {
       </div>
       {cancel && (
         <Modal
-          title="Cancel training incident"
+          title={isDemo ? "Cancel training incident" : "Cancel incident"}
           description="A reason will be recorded in the incident timeline."
           onClose={() => setCancel(false)}
         >
@@ -431,8 +443,12 @@ export function IncidentDetails({ id }: { id: string }) {
             </button>
             <button
               className="button primary"
-              onClick={() => {
-                const result = transition(incident.id, "Cancelled", reason);
+              onClick={async () => {
+                const result = await transition(
+                  incident.id,
+                  "Cancelled",
+                  reason,
+                );
                 if (result.ok) {
                   setCancel(false);
                   setError("");

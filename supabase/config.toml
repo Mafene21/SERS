@@ -1,0 +1,8 @@
+# Function deployment configuration. Production Auth URL and email settings
+# are managed separately in the Supabase dashboard.
+project_id = "sers"
+
+[functions.sers-account-link]
+verify_jwt = false
+entrypoint = "./functions/sers-account-link/index.ts"
+import_map = "./functions/sers-account-link/deno.json"

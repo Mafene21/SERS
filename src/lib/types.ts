@@ -11,7 +11,7 @@ export type Category = (typeof CATEGORIES)[number];
 export type IncidentStatus = (typeof STATUSES)[number];
 export type Priority = (typeof PRIORITIES)[number];
 export type Availability = "Available" | "On duty" | "Off duty";
-export type ViewRole = "admin" | "road-1" | "fire-1";
+export type ViewRole = string;
 
 export interface TimelineEvent {
   id: string;
@@ -46,6 +46,7 @@ export interface Responder {
   category: Category;
   availability: Availability;
   active: boolean;
+  enrolled?: boolean;
 }
 
 export interface Notification {
@@ -73,3 +74,20 @@ export interface DemoState {
 
 export type ActionResult =
   { ok: true; incidentId?: string } | { ok: false; error: string };
+
+export interface Account {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "responder";
+  category: Category | null;
+  callsign: string;
+  active: boolean;
+  enrolled: boolean;
+}
+
+export interface WorkspaceSnapshot {
+  state: DemoState;
+  account: Account;
+  accounts: Account[];
+}

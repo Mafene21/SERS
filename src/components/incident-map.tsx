@@ -8,6 +8,7 @@ import { LocateFixed, MapPinOff } from "lucide-react";
 import type { Incident } from "@/lib/types";
 import { validCoordinates } from "@/lib/utils";
 import { PriorityBadge, StatusBadge } from "./ui";
+import { useDemo } from "./demo-provider";
 
 function Bounds({ incidents }: { incidents: Incident[] }) {
   const map = useMap();
@@ -17,12 +18,19 @@ function Bounds({ incidents }: { incidents: Incident[] }) {
   const signature = JSON.stringify(positions);
   useEffect(() => {
     const points: [number, number][] = JSON.parse(signature);
-    if (points.length === 1) map.setView(points[0], 14);
+    if (points.length === 1) map.setView(points[0], 14, { animate: false });
     else if (points.length > 1)
-      map.fitBounds(points, { padding: [45, 45], maxZoom: 14 });
-    const observer = new ResizeObserver(() => map.invalidateSize());
+      map.fitBounds(points, { padding: [45, 45], maxZoom: 14, animate: false });
+    let active = true;
+    const observer = new ResizeObserver(() => {
+      if (active && map.getContainer().isConnected)
+        map.invalidateSize({ animate: false });
+    });
     observer.observe(map.getContainer());
-    return () => observer.disconnect();
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
   }, [map, signature]);
   return (
     <button
@@ -30,8 +38,12 @@ function Bounds({ incidents }: { incidents: Incident[] }) {
       aria-label="Recenter on incidents"
       onClick={() => {
         if (positions.length > 0)
-          map.fitBounds(positions, { padding: [45, 45], maxZoom: 14 });
-        else map.setView([0.333, 32.591], 12);
+          map.fitBounds(positions, {
+            padding: [45, 45],
+            maxZoom: 14,
+            animate: false,
+          });
+        else map.setView([0.333, 32.591], 12, { animate: false });
       }}
     >
       <LocateFixed size={18} />
@@ -45,6 +57,7 @@ const flamePath =
   '<path d="M12 2c1 5 5 5 5 10 2-1 2-3 2-3 5 9-1 13-7 13S2 17 5 11c1 2 2 3 3 3-2-5 3-7 4-12Z"/>';
 
 export default function IncidentMap({ incidents }: { incidents: Incident[] }) {
+  const { isDemo } = useDemo();
   const [tileError, setTileError] = useState(false);
   const valid = incidents.filter((i) => validCoordinates(i.coordinates));
   const missing = incidents.length - valid.length;
@@ -56,6 +69,9 @@ export default function IncidentMap({ incidents }: { incidents: Incident[] }) {
         scrollWheelZoom={false}
         className="incident-map"
         zoomControl={true}
+        zoomAnimation={false}
+        fadeAnimation={false}
+        markerZoomAnimation={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -72,8 +88,8 @@ export default function IncidentMap({ incidents }: { incidents: Incident[] }) {
         {valid.map((i) => (
           <Marker
             key={i.id}
-            title={`Simulated ${i.reference}: ${i.title}`}
-            alt={`Simulated ${i.category}`}
+            title={`${isDemo ? "Simulated " : ""}${i.reference}: ${i.title}`}
+            alt={`${isDemo ? "Simulated " : ""}${i.category}`}
             position={i.coordinates!}
             icon={divIcon({
               className: "custom-marker",
@@ -85,7 +101,10 @@ export default function IncidentMap({ incidents }: { incidents: Incident[] }) {
           >
             <Popup>
               <div className="map-popup">
-                <span className="eyebrow">SIMULATED · {i.reference}</span>
+                <span className="eyebrow">
+                  {isDemo ? "SIMULATED · " : ""}
+                  {i.reference}
+                </span>
                 <h3>{i.title}</h3>
                 <p>{i.location}</p>
                 <div className="popup-badges">
@@ -100,7 +119,11 @@ export default function IncidentMap({ incidents }: { incidents: Incident[] }) {
           </Marker>
         ))}
       </MapContainer>
-      <span className="map-training-label">FICTIONAL INCIDENT LOCATIONS</span>
+      <span className="map-training-label">
+        {isDemo
+          ? "FICTIONAL INCIDENT LOCATIONS"
+          : "RECORDED INCIDENT LOCATIONS"}
+      </span>
       {tileError && (
         <div className="map-error" role="status">
           Map tiles unavailable. Incident coordinates and details remain

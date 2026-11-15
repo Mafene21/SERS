@@ -3,8 +3,11 @@ import { existsSync } from "node:fs";
 
 export default defineConfig({
   testDir: "./tests",
-  fullyParallel: true,
-  workers: 2,
+  testMatch: process.env.SERS_INTEGRATION_ACCOUNTS
+    ? "phase-two.spec.ts"
+    : "dashboard.spec.ts",
+  fullyParallel: !process.env.SERS_INTEGRATION_ACCOUNTS,
+  workers: process.env.SERS_INTEGRATION_ACCOUNTS ? 1 : 2,
   retries: 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
@@ -31,7 +34,10 @@ export default defineConfig({
   webServer: {
     command: "npm run start -- --port 3000",
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
+    env: {
+      SERS_DEMO_MODE: process.env.SERS_INTEGRATION_ACCOUNTS ? "false" : "true",
+    },
     timeout: 120_000,
   },
 });

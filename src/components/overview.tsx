@@ -86,7 +86,7 @@ export function Overview() {
       value: resolved.length,
       icon: ShieldCheck,
       color: "green",
-      description: "Completed training responses",
+      description: "Completed responses",
       spark: sparkPoints(resolved, incidents),
     },
   ];
@@ -106,7 +106,7 @@ export function Overview() {
       <div className="overview-meta">
         <span className="date-label">
           <span className="green-dot" />
-          Training operations <span className="meta-divider">/</span> Kampala,
+          Response operations <span className="meta-divider">/</span> Kampala,
           Uganda
         </span>
         <span>
@@ -168,7 +168,7 @@ export function Overview() {
                 <span className="heading-dot" />
                 Emergency map
               </h2>
-              <p>Active incidents across the training area</p>
+              <p>Active incidents across the response area</p>
             </div>
             <Link className="text-link" href="/map">
               Open map <ArrowUpRight size={15} />

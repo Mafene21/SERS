@@ -28,7 +28,7 @@ import {
 import type { Availability, Incident } from "@/lib/types";
 
 export function ResponderHome() {
-  const { state, actor, visibleIncidents, setAvailability } = useDemo();
+  const { state, actor, visibleIncidents, setAvailability, busy } = useDemo();
   const now = useNow();
   const [availabilityError, setAvailabilityError] = useState("");
   const responder = state.responders.find((r) => r.id === state.role);
@@ -55,10 +55,10 @@ export function ResponderHome() {
           <select
             aria-label="My availability"
             value={responder?.availability ?? "Off duty"}
-            disabled={!responder?.active}
-            onChange={(e) => {
+            disabled={!responder?.active || busy}
+            onChange={async (e) => {
               if (!responder) return;
-              const result = setAvailability(
+              const result = await setAvailability(
                 responder.id,
                 e.target.value as Availability,
               );
@@ -71,7 +71,7 @@ export function ResponderHome() {
           </select>
         </label>
       </PageHeader>
-      {availabilityError && active.length > 0 && (
+      {availabilityError && (
         <p className="field-error responder-availability-error" role="alert">
           {availabilityError}
         </p>
@@ -117,7 +117,7 @@ export function ResponderHome() {
             <section className="panel">
               <EmptyState
                 title="No active assignments"
-                description="Your next assignment will appear here when a coordinator assigns it in this demo."
+                description="Your next assignment will appear here when a coordinator assigns it."
               >
                 <Link href="/reports" className="button">
                   View my history <ArrowRight size={16} />
@@ -180,7 +180,7 @@ export function ResponderHome() {
 }
 
 function AssignmentFocus({ incident }: { incident: Incident }) {
-  const { transition, state } = useDemo();
+  const { transition, state, busy } = useDemo();
   const [error, setError] = useState("");
   const now = useNow();
   const responder = state.responders.find((r) => r.id === state.role);
@@ -227,9 +227,9 @@ function AssignmentFocus({ incident }: { incident: Incident }) {
         {next && (
           <button
             className="button primary response-primary"
-            disabled={!responder?.active}
-            onClick={() => {
-              const result = transition(incident.id, next);
+            disabled={!responder?.active || busy}
+            onClick={async () => {
+              const result = await transition(incident.id, next);
               setError(result.ok ? "" : result.error);
             }}
           >

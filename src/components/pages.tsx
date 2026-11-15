@@ -42,9 +42,11 @@ import {
 import { date, exportCSV, isActive, teamName } from "@/lib/utils";
 import { TrendsChart } from "./charts";
 import { ResponderHome } from "./responder-home";
+import { AccountManager } from "./account-manager";
+import { LiveSettings } from "./live-settings";
 
 export function IncidentsPage() {
-  const { visibleIncidents } = useDemo();
+  const { visibleIncidents, isDemo } = useDemo();
   const params = useSearchParams();
   const [tab, setTab] = useState(
     params.get("priority") === "urgent" ? "urgent" : "all",
@@ -109,15 +111,16 @@ export function IncidentsPage() {
       </section>
       <p className="page-footnote">
         <FlaskConical size={14} />
-        All incident records are simulated. Role previews apply to this browser
-        only.
+        {isDemo
+          ? "All incident records are simulated. Role previews apply to this browser only."
+          : "Records and updates are shared with authorized staff."}
       </p>
     </>
   );
 }
 
 export function MapPage() {
-  const { visibleIncidents, isAdmin, state } = useDemo();
+  const { visibleIncidents, isAdmin, state, isDemo } = useDemo();
   const [scope, setScope] = useState("mine");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("active");
@@ -243,8 +246,9 @@ export function MapPage() {
       </section>
       <p className="page-footnote">
         <FlaskConical size={14} />
-        Fictional incident positions on an OpenStreetMap basemap. Shared
-        real-time updates arrive in a later phase.
+        {isDemo
+          ? "Fictional incident positions on an OpenStreetMap basemap. Shared real-time updates arrive in a later phase."
+          : "Only reports with recorded coordinates appear on the map. Records refresh every 30 seconds."}
       </p>
     </>
   );
@@ -357,8 +361,8 @@ function AssignedResponses() {
                   {i.status === "Pending" && (
                     <button
                       className="button primary"
-                      onClick={() => {
-                        const result = transition(i.id, "Accepted");
+                      onClick={async () => {
+                        const result = await transition(i.id, "Accepted");
                         if (!result.ok) notify(result.error);
                       }}
                     >
@@ -393,8 +397,15 @@ function AssignedResponses() {
 }
 
 export function RespondersPage() {
-  const { state, visibleIncidents, isAdmin, setActive, setAvailability } =
-    useDemo();
+  const {
+    state,
+    visibleIncidents,
+    isAdmin,
+    setActive,
+    setAvailability,
+    isDemo,
+    busy,
+  } = useDemo();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [profile, setProfile] = useState<string | null>(null);
@@ -418,6 +429,7 @@ export function RespondersPage() {
         title="Response teams"
         description="Know who is available, who is responding, and how your teams are doing."
       />
+      <AccountManager />
       <div className="team-intro-grid">
         {CATEGORIES.filter(
           (c) =>
@@ -566,10 +578,20 @@ export function RespondersPage() {
             <div>
               <strong>
                 {selected.active
-                  ? "Active training account"
-                  : "Inactive training account"}
+                  ? isDemo
+                    ? "Active training account"
+                    : selected.enrolled === false
+                      ? "Awaiting activation"
+                      : "Active account"
+                  : isDemo
+                    ? "Inactive training account"
+                    : "Inactive account"}
               </strong>
-              <p>Fictional responder profile</p>
+              <p>
+                {isDemo
+                  ? "Fictional responder profile"
+                  : "Approved responder profile"}
+              </p>
             </div>
           </div>
           <h3 className="section-subheading">Active assignments</h3>
@@ -596,9 +618,10 @@ export function RespondersPage() {
               <label htmlFor="responder-availability">Availability</label>
               <select
                 id="responder-availability"
+                disabled={busy || selected.enrolled === false}
                 value={selected.availability}
-                onChange={(e) => {
-                  const result = setAvailability(
+                onChange={async (e) => {
+                  const result = await setAvailability(
                     selected.id,
                     e.target.value as Availability,
                   );
@@ -643,21 +666,25 @@ export function RespondersPage() {
             <div className="modal-actions">
               <button
                 className={`button ${selected.active ? "danger-subtle" : "primary"}`}
-                onClick={() => {
-                  const result = setActive(selected.id, !selected.active);
+                onClick={async () => {
+                  const result = await setActive(selected.id, !selected.active);
                   setProfileMessage({
                     error: !result.ok,
                     message: result.ok
                       ? selected.active
-                        ? "Demo account deactivated."
-                        : "Demo account activated."
+                        ? "Account deactivated."
+                        : "Account activated."
                       : result.error,
                   });
                 }}
               >
                 {selected.active
-                  ? "Deactivate demo account"
-                  : "Activate demo account"}
+                  ? isDemo
+                    ? "Deactivate demo account"
+                    : "Deactivate account"
+                  : isDemo
+                    ? "Activate demo account"
+                    : "Reactivate account"}
               </button>
             </div>
           )}
@@ -668,7 +695,7 @@ export function RespondersPage() {
 }
 
 export function ReportsPage() {
-  const { visibleIncidents, isAdmin, state } = useDemo();
+  const { visibleIncidents, isAdmin, state, isDemo } = useDemo();
   const records = visibleIncidents.filter(
     (i) => isAdmin || i.responderId === state.role,
   );
@@ -738,9 +765,9 @@ export function ReportsPage() {
         <div className="panel-heading">
           <div>
             <h2>Seven-day reporting trend</h2>
-            <p>Counts derive from your current training records.</p>
+            <p>Counts derive from your current records.</p>
           </div>
-          <span className="training-tag">SIMULATED DATA</span>
+          {isDemo && <span className="training-tag">SIMULATED DATA</span>}
         </div>
         <TrendsChart incidents={records} />
       </section>
@@ -757,16 +784,21 @@ export function ReportsPage() {
       <p className="page-footnote">
         <FlaskConical size={14} />
         Resolution time measures reported-to-resolved duration. It does not
-        measure arrival time. All figures are simulated.
+        measure arrival time.{" "}
+        {isDemo
+          ? "All figures are simulated."
+          : "Figures are calculated from recorded status changes."}
       </p>
     </div>
   );
 }
 
 export function SettingsPage() {
-  const { state, updatePreferences, reset, notify, isAdmin, actor } = useDemo();
+  const { state, updatePreferences, reset, notify, isAdmin, actor, isDemo } =
+    useDemo();
   const [name, setName] = useState(state.preferences.name);
   const [resetOpen, setResetOpen] = useState(false);
+  if (!isDemo) return <LiveSettings />;
   return (
     <>
       <PageHeader

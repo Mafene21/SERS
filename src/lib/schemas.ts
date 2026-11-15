@@ -18,5 +18,7 @@ export const reportSchema = z.object({
     .trim()
     .min(10, "Use at least 10 characters.")
     .max(2000),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 export type ReportInput = z.infer<typeof reportSchema>;

@@ -1,105 +1,66 @@
 # SERS · Emergency Responder Dashboard
 
-Phase 1 of the **Smart Emergency Response System**, a university Mobile Computing project. A browser-based dashboard for coordinating **road accidents and fire outbreaks**.
+SERS is a staff website for coordinating road accident and fire incident reports. Phase 2 connects the administrator and responder dashboards to Supabase Auth and a shared PostgreSQL database.
 
-**This is a training demonstration. All incident records, responder identities, locations of incidents, notifications, and statistics are simulated. It does not contact emergency services.** The map uses real OpenStreetMap geographic data with fictional incident positions.
+Open [SERS on Vercel](https://sers-mafene21-5969.vercel.app/). [GitHub Pages](https://mafene21.github.io/SERS/) redirects to the same application. GitHub `main` deploys automatically to the existing Vercel project.
 
-## Live dashboard
+## Administrator setup
 
-Open [the SERS dashboard on Vercel](https://sers-mafene21-5969.vercel.app/). Vercel hosts the Next.js application and deploys updates from this repository's `main` branch.
+The first administrator email has been approved in the database. Open **Activate approved account** on the sign-in page, choose a password of at least 12 characters, confirm your email, and sign in. No initial password is stored in this repository.
 
-The [GitHub Pages address](https://mafene21.github.io/SERS/) redirects to the dashboard. The root `index.html` provides this redirect; the application itself is in `src/app`.
+In **Response teams → Staff accounts**, approve staff with their name, email, role and response team. Create an **Activation link** and share it privately with the intended account holder. They open the single-use link and choose their own password. **Reset link** provides the same private delivery option for password recovery. Links confer account access: keep them out of public messages, screenshots and logs.
 
-Each browser has its own simulated workspace. Phase 2 remains on hold; sign-in, a shared database, and real emergency dispatch are not enabled.
+Staff can also activate through email confirmation and request emailed password resets. Supabase's default sender only delivers to project organization members; configure [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp) for general email delivery. Private administrator-generated links do not require SMTP and never send an email automatically.
+
+## Phase 2 behavior
+
+- Real email/password authentication, HTTP-only session cookies, session refresh and global sign-out.
+- Administrator-approved access; public sign-up alone never grants dashboard access. Roles come from protected database membership, never browser state or editable user metadata.
+- Administrators record incidents, approve staff, manage account access, assign available responders and cancel incidents with a reason.
+- Responders see their own team's records and can accept, respond to, resolve and add notes to their own active assignments.
+- Shared incident records, recorded coordinates, staff availability, append-only timelines and in-app activity notifications. Preferences and read notifications belong to the signed-in account.
+- Database rules reject cross-team assignments, skipped workflow states, changes to closed incidents, and multiple active assignments for one responder. Deactivation immediately removes access even from an existing token.
+- Manual refresh, refresh on window focus and polling every 30 seconds. WebSocket updates, phone GPS tracking, SMS/push notifications and the citizen app remain later integrations.
+- The existing map uses Leaflet and OpenStreetMap. New reports may include confirmed latitude and longitude; missing coordinates are never replaced with an invented incident position.
+- No fictional incidents are seeded into the shared database. Local training fixtures remain available only through explicit local demo mode.
+
+This is a university project. Connecting the staff dashboard does not connect it to public emergency services or establish a monitored emergency reporting service.
 
 ## Run locally
 
-Requirements: Node.js 20.20+ (or a supported newer LTS release), npm, and a modern browser.
+Use Node.js 22 or newer; `.nvmrc` pins the tested Node.js release.
 
 ```bash
-cd SERS
 npm ci
+cp .env.example .env.local
+# Set the project URL and publishable key in .env.local.
 npm run dev
 ```
 
-Open **http://localhost:3000**. If port 3000 is occupied, use `npm run dev -- --port 3001` and open the printed URL.
+Open http://localhost:3000. For a standalone local demonstration, set `SERS_DEMO_MODE=true` in `.env.local`. Vercel always requires real sign-in and ignores that flag. Missing production configuration fails closed.
 
-No database credentials are required. `.env.example` documents optional map-tile configuration and the public configuration reserved for Phase 2. Copy it to `.env.local` only if you want to change the defaults. Never put secret or service-role keys in variables starting with `NEXT_PUBLIC_`.
+Only the Supabase project URL and **publishable** key belong in `NEXT_PUBLIC_` variables. No service-role or secret key is required by the Next.js application. The account-link Edge Function uses Supabase's server-only environment and checks the caller's live session and active administrator membership.
 
-For a production build served locally:
+## Database and deployment
 
-```bash
-npm run build
-npm start
-```
+The existing Supabase project `wtfjgpvyhkdfhqujlfdz` (displayed as Schoolspace) was resumed and reused at the owner's request. Existing tables were retained. SERS uses `public.sers_*` tables and the non-exposed `sers_private` schema, avoiding collisions with the former application.
 
-## Implemented in Phase 1
+Versioned schema changes are in `supabase/migrations/`. Use the pinned Supabase CLI and inspect `--help` before running commands; CLI v3 database commands target local development unless `--remote` is supplied. Hosted mutation commands require explicit `--yes`. Use a separate test project for further schema development. This repository contains the SERS migrations; the reused project also retains its earlier Schoolspace migration history. Synchronize that history before attempting a CLI push to the reused project.
 
-- Role-specific home screens: the administrator incident control centre combines the incident map, team availability, assignment shortcuts, and automatically refreshed pending wait times. Responder previews open directly to their personal assignments, with large response actions and phone navigation for assignments, map, history, and profile.
-- Responder maps default to personal assignments, with a team-view option. Responder history and exports contain their own assignments. Team incident browsing remains available separately.
-- Directions and coordinate-copy controls on assigned cards and incident details. Directions open Google Maps for the fictional position; unconfirmed coordinates show an unavailable state. Clipboard failures leave the coordinates visible for manual copying.
-- Responsive command-center interface, mobile navigation, collapsible sidebar, light and dark themes, and keyboard focus states.
-- Overview statistics, seven-day Recharts trends, category distribution, team readiness, active incident queue, and recent activity. All metrics are derived from the current training records.
-- Incident search, category/status/priority filters, sorting, pagination, and CSV export of matching records, with spreadsheet-formula escaping.
-- Dedicated incident details, Leaflet/OpenStreetMap maps, GPS coordinates, missing-coordinate states, assignment controls, append-only demo event timelines, and response notes validated with React Hook Form and Zod.
-- Functional `Pending → Accepted → Responding → Resolved` workflow. Administrator cancellation requires a reason. Closed incidents retain their histories.
-- Fictional report creation, responder profiles, team availability, active assignment views, and account activation/deactivation previews.
-- In-app notification history, unread indicators, mark-as-read, profile/theme/notification preferences, and reset controls.
-- Incident history, reported-to-resolved duration statistics, printable reports, and CSV downloads.
-- Validated browser-local persistence. Refreshing the browser preserves demo edits. Incompatible saved data loads a fresh demonstration; unavailable storage produces a visible message.
-- Loading, empty, missing-record, map-network-error, and application-error states; accessible native modal dialogs.
+The function source is `supabase/functions/sers-account-link/`. Its gateway JWT switch is disabled because the handler itself validates the bearer token through Auth and checks current database permissions before generating any link. Deploy with that configuration; do not remove the handler's authentication checks.
 
-## Try the workflow
+Production Vercel variables:
 
-The top banner includes **Preview as**. These are interface previews, **not authentication or backend authorization**.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-On the home page, selecting Alex or Nina opens **My assignments**. Use the main response button to advance the current assignment, or **Add response note** to open its notes. After resolution, the assignment moves into personal history. Return to Administrator preview for the incident control centre. Responder phone navigation remains available at the bottom of the screen.
+Supabase Authentication URL configuration:
 
-1. In **Administrator** preview, open **Incidents**, then `SERS-001`.
-2. Assign **Sarah Namuli** or **James Kato**, who initially have no active assignment. A responder must be active, on duty, on the correct team, and free of another active assignment.
-3. Advance the response with **Accept incident → Start responding → Mark as resolved**. The administrator can operate the full demonstration.
-4. To try the dedicated responder experience, switch to **Alex · Road responder**. Open **My assignments**, select `SERS-003`, add a note, then start responding and resolve it. Switch to **Nina · Fire responder** for the fire-team view.
-5. To try a newly assigned incident as Alex, finish `SERS-003`, switch to Administrator, create a simulated road accident, assign Alex, then switch back to Alex.
-6. Refresh to confirm persistence. Use **Settings → Reset training workspace** to start over.
+- Site URL: `https://sers-mafene21-5969.vercel.app`
+- Redirect URL: `https://sers-mafene21-5969.vercel.app/auth/callback`
+- Redirect URL: `https://sers-mafene21-5969.vercel.app/auth/callback?next=/recover`
 
-Responders can see their operational team’s incidents and update their own active assignments. Only the administrator preview can assign, cancel, or activate/deactivate accounts. These checks demonstrate intended product behavior; all data lives in the user’s browser and is editable by the user.
-
-## Pages
-
-| Route             | Purpose                                                                        |
-| ----------------- | ------------------------------------------------------------------------------ |
-| `/`               | Operational overview                                                           |
-| `/incidents`      | Search, filter, and coordinate reports                                         |
-| `/incidents/[id]` | Incident record, location, response controls, notes, and timeline              |
-| `/map`            | Category, status, and priority filters over incident markers and location list |
-| `/assignments`    | Active assignments and personal response history                               |
-| `/responders`     | Team readiness, profiles, and availability                                     |
-| `/reports`        | Closed records, statistics, print, and CSV export                              |
-| `/settings`       | Training profile, preferences, integration information, and reset              |
-
-## Source layout
-
-```text
-src/app/                    Next.js App Router routes, metadata, and global styles
-src/components/
-  demo-provider.tsx         Shared demo state and guarded demo operations
-  shell.tsx                 Navigation, role previews, notifications, and app frame
-  overview.tsx              Operational overview
-  incident-table.tsx        Search, filters, sorting, pagination, and export
-  incident-details.tsx      Assignment, status workflow, notes, and timeline
-  incident-map.tsx          Client-only React Leaflet implementation
-  map-panel.tsx             Lazy map loader, excluded from server rendering
-  charts.tsx                Database-ready presentation charts
-  pages.tsx                 Supporting dashboard views
-  report-dialog.tsx         Validated simulated-report form
-  ui.tsx                    Shared badges, dialogs, headers, and empty states
-src/lib/
-  demo-data.ts              Fictional training fixtures
-  types.ts                  Shared domain types
-  schemas.ts                Form validation
-  utils.ts                  Time formatting, metrics, coordinates, and export
-tests/dashboard.spec.ts     Browser workflow and responsive checks
-```
+Do not connect arbitrary preview deployments to production credentials. Existing Vercel preview protection is retained.
 
 ## Validation
 
@@ -107,31 +68,10 @@ tests/dashboard.spec.ts     Browser workflow and responsive checks
 npm run lint
 npm run typecheck
 npm run build
-npm run test:e2e
 ```
 
-Browser tests start the production server, so run the build first. They use `/usr/bin/google-chrome` if available, otherwise a Playwright Chromium installation. To install the latter, run `npx playwright install chromium`. An alternative browser executable can be supplied with `PLAYWRIGHT_CHROMIUM_EXECUTABLE`.
+`supabase/tests/phase_two_permissions.sql` checks team isolation, unauthorized writes, role promotion attempts, workflow constraints, responder capacity, closed records and account revocation inside a transaction that rolls back its fixtures.
 
-The suite covers the incident lifecycle and persistence, team visibility and assignment controls, search/filter/pagination/export, cancellation with a reason, marker filtering, mobile navigation, theme persistence, and reset. Role-workspace checks cover live wait-time updates, queue assignment and availability counts, responder status changes and notes, personal map/history scope, directions destinations, clipboard failure, and missing coordinates. Automated functional tests stub external map tiles to avoid dependence on third-party availability and repeated tile requests. Screenshot artifacts and the test report are written to ignored `test-results/` and `playwright-report/` directories.
+`tests/phase-two.spec.ts` exercises real Auth sessions and the shared database using disposable approved administrator, road and fire accounts plus an unapproved account. Supply their credentials through a private JSON file using `SERS_INTEGRATION_ACCOUNTS`; never commit this file or browser traces containing account information. Run with `npx playwright test tests/phase-two.spec.ts`. `npm run test:e2e` runs the original `tests/dashboard.spec.ts` against explicit local demonstration mode. Setting `SERS_INTEGRATION_ACCOUNTS` switches the test configuration to the real backend suite. Stop any existing server on the test port before running the suite.
 
-## Limits and remaining phases
-
-Phase 1 deliberately stops at the reviewable dashboard demonstration. It has no Supabase connection, secure sign-in, password reset, server authorization, SQL migrations, cross-device synchronization, SMS, push messaging, or actual emergency dispatch. The role selector is available to anyone who can open this prototype. Browser-local data is intended for fictional information only.
-
-Notification events are generated by demo actions. They are not Supabase Realtime events. New simulated reports have no coordinates until a future location-confirmation workflow is implemented; the initial fixtures provide fictional map positions. The UI uses East Africa Time (UTC+3); event timestamps are stored as ISO UTC.
-
-Map tiles require internet access. The default public OSM tile service is intended for normal interactive viewing, has no availability guarantee, and prohibits bulk/offline downloads. Attribution remains visible. See the [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/). For other tile providers, configure the URL and update attribution as required by their terms.
-
-After Phase 1 approval, Phase 2 should:
-
-1. Add Supabase authentication, administrator-provisioned responder accounts, protected routes, session handling, and password reset.
-2. Define versioned migrations for profiles, categories, incidents, assignments, teams, availability, notifications, status history, **incident notes**, and administrative audit events.
-3. Enforce team access, account activity, field permissions, status transitions, and append-only histories in the database. Implement assignment and status operations atomically to prevent conflicting updates.
-4. Add RLS and negative permission tests, including self-promotion, cross-team access, inactive accounts, and competing assignments.
-5. Replace the demo data adapter while retaining domain types and presentation components. Define the future mobile reporting contract, reporter permissions, duplicate-submission protection, and coordinate validation.
-
-Later phases add shared real-time notifications and map updates, and complete backend integration checks. Phase 1 is published on Vercel with source on GitHub; publishing this demonstration does not enable Phase 2.
-
-## Dependency note
-
-Versions are pinned and `package-lock.json` is included with the source. The `minimatch` override applies only to the TypeScript ESLint parser dependency, replacing the version affected by GHSA-g3hv-75wg-m249 with 11.0.1. The parser’s API usage is checked by the lint command.
+The security advisor found no SERS table permission problems. Project-wide [leaked password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) is disabled in the reused project's Auth settings; enable it if available on your plan. Pre-existing Schoolspace index advisories were left untouched.

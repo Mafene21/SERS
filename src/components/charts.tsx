@@ -10,13 +10,10 @@ import {
   YAxis,
 } from "recharts";
 import type { Incident } from "@/lib/types";
-import { DEMO_FIXTURE_REFERENCE } from "@/lib/demo-data";
+import { useNow } from "./live-clock";
 
 export function TrendsChart({ incidents }: { incidents: Incident[] }) {
-  const latest = incidents.length
-    ? Math.max(...incidents.map((i) => new Date(i.reportedAt).getTime()))
-    : new Date(DEMO_FIXTURE_REFERENCE).getTime();
-  const today = new Date(latest);
+  const today = new Date(useNow());
   const formatter = new Intl.DateTimeFormat("en-CA", {
     year: "numeric",
     month: "2-digit",
