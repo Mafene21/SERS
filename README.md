@@ -75,3 +75,7 @@ npm run build
 `tests/phase-two.spec.ts` exercises real Auth sessions and the shared database using disposable approved administrator, road and fire accounts plus an unapproved account. Supply their credentials through a private JSON file using `SERS_INTEGRATION_ACCOUNTS`; never commit this file or browser traces containing account information. Run with `npx playwright test tests/phase-two.spec.ts`. `npm run test:e2e` runs the original `tests/dashboard.spec.ts` against explicit local demonstration mode. Setting `SERS_INTEGRATION_ACCOUNTS` switches the test configuration to the real backend suite. Stop any existing server on the test port before running the suite.
 
 The security advisor found no SERS table permission problems. Project-wide [leaked password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) is disabled in the reused project's Auth settings; enable it if available on your plan. Pre-existing Schoolspace index advisories were left untouched.
+
+## Citizen app
+
+The separate Android/web Flutter project is in [`citizen-app/`](citizen-app/README.md). It supports guest reporting without sign-up, login, profile or settings. Guest reports enter this dashboard; authorized staff can view optional reporter contact details and private photos. The shared backend uses the `sers-citizen` Edge Function and versioned migrations. See the app README for browser testing and opening the same project in Android Studio.

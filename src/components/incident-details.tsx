@@ -43,6 +43,7 @@ import { MapPanel } from "./map-panel";
 import type { Incident } from "@/lib/types";
 import { LocationActions } from "./location-actions";
 import { WaitingBadge } from "./live-clock";
+import { CitizenReport } from "./citizen-report";
 
 export function IncidentDetails({ id }: { id: string }) {
   const {
@@ -192,6 +193,7 @@ export function IncidentDetails({ id }: { id: string }) {
               </div>
             </div>
           </section>
+          {!isDemo && <CitizenReport key={incident.id} id={incident.id} />}
           <section className="panel detail-map">
             <div className="panel-heading">
               <div>
