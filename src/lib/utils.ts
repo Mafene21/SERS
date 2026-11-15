@@ -4,6 +4,14 @@ export const isActive = (incident: Incident) =>
   incident.status !== "Resolved" && incident.status !== "Cancelled";
 export const teamName = (category: Category) =>
   category === "Road Accident" ? "Road Accident Response" : "Fire Response";
+export const memberCategories = (
+  member?: { category: Category | null; categories?: Category[] } | null,
+): Category[] =>
+  member?.categories ?? (member?.category ? [member.category] : []);
+export const memberTeamName = (member: {
+  category: Category | null;
+  categories?: Category[];
+}) => memberCategories(member).map(teamName).join(" / ");
 export const time = (value: string) =>
   new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",

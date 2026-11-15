@@ -6,6 +6,7 @@ import { useDemo } from "./demo-provider";
 import { useLiveWorkspace } from "./live-provider";
 import { Modal } from "./ui";
 import { CATEGORIES, type Category, type Account } from "@/lib/types";
+import { memberCategories } from "@/lib/utils";
 
 export function AccountManager() {
   const workspace = useLiveWorkspace();
@@ -57,7 +58,11 @@ export function AccountManager() {
               <tr key={a.id}>
                 <td>{a.name}</td>
                 <td>{a.email}</td>
-                <td>{a.role === "admin" ? "Administrator" : a.category}</td>
+                <td>
+                  {a.role === "admin"
+                    ? "Administrator"
+                    : memberCategories(a).join(" / ")}
+                </td>
                 <td>
                   {!a.active
                     ? "Inactive"
@@ -193,14 +198,18 @@ export function AccountManager() {
               e.preventDefault();
               if (busy) return;
               const form = new FormData(e.currentTarget);
+              const categories: Category[] =
+                role === "admin"
+                  ? []
+                  : form.get("category") === "both"
+                    ? [...CATEGORIES]
+                    : [form.get("category") as Category];
               const result = await workspace.mutate("approve_account", {
                 email: String(form.get("email")).trim().toLowerCase(),
                 name: form.get("name"),
                 role,
-                category:
-                  role === "responder"
-                    ? (form.get("category") as Category)
-                    : null,
+                category: categories[0] ?? null,
+                ...(categories.length ? { categories } : {}),
                 callsign: form.get("callsign") ?? "",
               });
               if (!result.ok) setError(result.error);
@@ -238,6 +247,7 @@ export function AccountManager() {
                     {CATEGORIES.map((c) => (
                       <option key={c}>{c}</option>
                     ))}
+                    <option value="both">Fire and road</option>
                   </select>
                 </label>
               )}

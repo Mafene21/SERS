@@ -45,6 +45,7 @@ export interface Responder {
   callsign: string;
   category: Category;
   availability: Availability;
+  categories?: Category[];
   active: boolean;
   enrolled?: boolean;
 }
@@ -81,6 +82,7 @@ export interface Account {
   name: string;
   role: "admin" | "responder";
   category: Category | null;
+  categories?: Category[];
   callsign: string;
   active: boolean;
   enrolled: boolean;

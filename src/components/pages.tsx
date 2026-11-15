@@ -39,7 +39,14 @@ import {
   STATUSES,
   type Availability,
 } from "@/lib/types";
-import { date, exportCSV, isActive, teamName } from "@/lib/utils";
+import {
+  date,
+  exportCSV,
+  isActive,
+  teamName,
+  memberCategories,
+  memberTeamName,
+} from "@/lib/utils";
 import { TrendsChart } from "./charts";
 import { ResponderHome } from "./responder-home";
 import { AccountManager } from "./account-manager";
@@ -416,9 +423,12 @@ export function RespondersPage() {
   const responders = state.responders.filter(
     (r) =>
       (isAdmin ||
-        r.category ===
-          state.responders.find((p) => p.id === state.role)?.category) &&
-      (!category || r.category === category) &&
+        memberCategories(r).some((c) =>
+          memberCategories(
+            state.responders.find((p) => p.id === state.role),
+          ).includes(c),
+        )) &&
+      (!category || memberCategories(r).some((c) => c === category)) &&
       `${r.name} ${r.callsign}`.toLowerCase().includes(query.toLowerCase()),
   );
   const selected = state.responders.find((r) => r.id === profile);
@@ -434,9 +444,13 @@ export function RespondersPage() {
         {CATEGORIES.filter(
           (c) =>
             isAdmin ||
-            c === state.responders.find((r) => r.id === state.role)?.category,
+            memberCategories(
+              state.responders.find((r) => r.id === state.role),
+            ).includes(c),
         ).map((c) => {
-          const team = state.responders.filter((r) => r.category === c);
+          const team = state.responders.filter((r) =>
+            memberCategories(r).includes(c),
+          );
           const available = team.filter(
             (r) =>
               r.active &&
@@ -518,7 +532,7 @@ export function RespondersPage() {
                 <span className="callsign">{r.callsign}</span>
                 <p>
                   <CategoryIcon category={r.category} size={14} />
-                  {teamName(r.category)}
+                  {memberTeamName(r)}
                 </p>
                 <div className="responder-metrics">
                   <div>
@@ -566,7 +580,7 @@ export function RespondersPage() {
       {selected && (
         <Modal
           title={selected.name}
-          description={`${selected.callsign} · ${teamName(selected.category)} Team`}
+          description={`${selected.callsign} · ${memberTeamName(selected)} Team`}
           onClose={() => setProfile(null)}
         >
           <div className="profile-detail">

@@ -32,6 +32,7 @@ import {
 import {
   date,
   isActive,
+  memberCategories,
   nextStatus,
   teamName,
   time,
@@ -85,7 +86,7 @@ export function IncidentDetails({ id }: { id: string }) {
   const next = nextStatus(incident.status);
   const eligible = state.responders.filter(
     (r) =>
-      r.category === incident.category &&
+      memberCategories(r).includes(incident.category) &&
       r.active &&
       r.enrolled !== false &&
       r.availability !== "Off duty" &&

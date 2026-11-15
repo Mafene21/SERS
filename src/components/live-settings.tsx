@@ -4,6 +4,7 @@ import { LockKeyhole, LogOut, Moon, Radio, UserRound } from "lucide-react";
 import { useDemo } from "./demo-provider";
 import { useLiveWorkspace } from "./live-provider";
 import { PageHeader } from "./ui";
+import { memberCategories } from "@/lib/utils";
 
 export function LiveSettings() {
   const { state, actor, isAdmin, busy, updatePreferences, signOut } = useDemo();
@@ -39,7 +40,7 @@ export function LiveSettings() {
                 value={
                   isAdmin
                     ? "Administrator"
-                    : `Responder · ${live?.snapshot.account.category}`
+                    : `Responder · ${memberCategories(live?.snapshot.account).join(" / ")}`
                 }
                 readOnly
               />

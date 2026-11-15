@@ -50,10 +50,12 @@ const input = z.discriminatedUnion("command", [
         name: z.string().trim().min(2).max(60),
         role: z.enum(["admin", "responder"]),
         category: z.enum(CATEGORIES).nullable(),
+        categories: z.array(z.enum(CATEGORIES)).min(1).max(2).optional(),
         callsign: z.string().trim().max(30),
       })
       .refine(
-        (p) => p.role === "admin" || p.category !== null,
+        (p) =>
+          p.role === "admin" || p.category !== null || !!p.categories?.length,
         "Choose the responder's team.",
       ),
   }),

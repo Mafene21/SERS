@@ -8,7 +8,7 @@ Open [SERS on Vercel](https://sers-mafene21-5969.vercel.app/). [GitHub Pages](ht
 
 The first administrator email has been approved in the database. Use the private administrator setup file supplied during installation to choose a password of at least 12 characters. Keep that file private and delete it after activation. Email activation is also available when your email sender is configured. No initial password or activation token is stored in this repository.
 
-In **Response teams → Staff accounts**, approve staff with their name, email, role and response team. Create an **Activation link** and share it privately with the intended account holder. They open the single-use link and choose their own password. **Reset link** provides the same private delivery option for password recovery. Links confer account access: keep them out of public messages, screenshots and logs.
+In **Response teams → Staff accounts**, approve staff with their name, email, role and response team. Choose **Fire and road** for a responder who covers both teams with one account. Create an **Activation link** and share it privately with the intended account holder. They open the single-use link and choose their own password. **Reset link** provides the same private delivery option for password recovery. Links confer account access: keep them out of public messages, screenshots and logs.
 
 Staff can also activate through email confirmation and request emailed password resets. Supabase's default sender only delivers to project organization members; configure [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp) for general email delivery. Private administrator-generated links do not require SMTP and never send an email automatically.
 
@@ -17,7 +17,7 @@ Staff can also activate through email confirmation and request emailed password 
 - Real email/password authentication, HTTP-only session cookies, session refresh and global sign-out.
 - Administrator-approved access; public sign-up alone never grants dashboard access. Roles come from protected database membership, never browser state or editable user metadata.
 - Administrators record incidents, approve staff, manage account access, assign available responders and cancel incidents with a reason.
-- Responders see their own team's records and can accept, respond to, resolve and add notes to their own active assignments.
+- Responders see records for their approved team or teams and can accept, respond to, resolve and add notes to their own active assignments. A responder covering both fire and road still has one login and one active assignment at a time across both teams.
 - Shared incident records, recorded coordinates, staff availability, append-only timelines and in-app activity notifications. Preferences and read notifications belong to the signed-in account.
 - Database rules reject cross-team assignments, skipped workflow states, changes to closed incidents, and multiple active assignments for one responder. Deactivation immediately removes access even from an existing token.
 - Manual refresh, refresh on window focus and polling every 30 seconds. WebSocket updates, phone GPS tracking, SMS/push notifications and the citizen app remain later integrations.

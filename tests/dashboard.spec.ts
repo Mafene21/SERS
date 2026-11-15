@@ -15,6 +15,70 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+test("one responder account can receive fire and road assignments", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Incident control centre" }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("sers-demo-v1")!);
+    const responder = state.responders.find(
+      (r: { id: string }) => r.id === "road-1",
+    );
+    responder.categories = ["Road Accident", "Fire Outbreak"];
+    responder.availability = "Available";
+    state.incidents = state.incidents.filter(
+      (i: { responderId: string | null }) => i.responderId !== "road-1",
+    );
+    localStorage.setItem("sers-demo-v1", JSON.stringify(state));
+  });
+  await page.reload();
+  await page.goto("/incidents/004");
+  await page.getByLabel("Assign a responder").selectOption("road-1");
+  await page
+    .getByRole("button", { name: "Assign responder", exact: true })
+    .click();
+  await expect(
+    page.getByText("Assigned to Alex Morgan", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Preview role").selectOption("road-1");
+  await page.goto("/");
+  await expect(page.locator(".responder-team-label")).toContainText(
+    "Road Accident Response / Fire Response",
+  );
+  await expect(page.locator(".assignment-focus")).toContainText(
+    "Residential fire report",
+  );
+  await page
+    .getByRole("button", { name: "Accept incident", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Start responding", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Mark as resolved", exact: true })
+    .click();
+  await page.getByLabel("Preview role").selectOption("admin");
+  await page.goto("/incidents/001");
+  await page.getByLabel("Assign a responder").selectOption("road-1");
+  await page
+    .getByRole("button", { name: "Assign responder", exact: true })
+    .click();
+  await page.getByLabel("Preview role").selectOption("road-1");
+  await page.goto("/");
+  await expect(page.locator(".assignment-focus")).toContainText(
+    "Two-vehicle collision",
+  );
+  await page.goto("/responders");
+  await expect(page.locator(".team-intro")).toHaveCount(2);
+  await page.getByLabel("Filter responder team").selectOption("Fire Outbreak");
+  await expect(
+    page.locator(".responder-card").filter({ hasText: "Alex Morgan" }),
+  ).toBeVisible();
+});
+
 test("control centre updates waiting ages and assigns from the queue", async ({
   page,
 }) => {

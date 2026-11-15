@@ -17,7 +17,14 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useDemo } from "./demo-provider";
-import { date, exportCSV, isActive, time, sparkPoints } from "@/lib/utils";
+import {
+  date,
+  exportCSV,
+  isActive,
+  time,
+  sparkPoints,
+  memberCategories,
+} from "@/lib/utils";
 import { PageHeader } from "./ui";
 import { SimulateButton } from "./report-dialog";
 import { MapPanel } from "./map-panel";
@@ -199,9 +206,11 @@ export function Overview() {
               <Users size={18} />
             </div>
             {CATEGORIES.map((category) => {
-              const members = team.filter((r) => r.category === category);
-              const ready = available.filter(
-                (r) => r.category === category,
+              const members = team.filter((r) =>
+                memberCategories(r).includes(category),
+              );
+              const ready = available.filter((r) =>
+                memberCategories(r).includes(category),
               ).length;
               const onDuty = members.filter(
                 (r) => r.active && r.availability !== "Off duty",

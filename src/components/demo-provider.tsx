@@ -23,7 +23,7 @@ import {
   type Preferences,
   type ViewRole,
 } from "@/lib/types";
-import { isActive, nextStatus } from "@/lib/utils";
+import { isActive, nextStatus, memberCategories } from "@/lib/utils";
 import { noteSchema, reportSchema, type ReportInput } from "@/lib/schemas";
 
 const KEY = "sers-demo-v1";
@@ -42,6 +42,7 @@ const savedSchema = z.object({
       initials: z.string(),
       callsign: z.string(),
       category: z.enum(CATEGORIES),
+      categories: z.array(z.enum(CATEGORIES)).optional(),
       availability: z.enum(["Available", "On duty", "Off duty"]),
       active: z.boolean(),
     }),
@@ -186,7 +187,9 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
       : (s.responders.find((r) => r.id === s.role)?.name ?? "Demo responder");
   const canSee = (incident: Incident, s: DemoState) =>
     s.role === "admin" ||
-    incident.category === s.responders.find((r) => r.id === s.role)?.category;
+    memberCategories(s.responders.find((r) => r.id === s.role)).includes(
+      incident.category,
+    );
   const find = (id: string) =>
     latest.current.incidents.find((i) => i.id === id);
   function modify(
@@ -235,7 +238,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     if (
       !responder ||
       !responder.active ||
-      responder.category !== incident.category ||
+      !memberCategories(responder).includes(incident.category) ||
       responder.availability === "Off duty"
     )
       return {

@@ -22,7 +22,7 @@ import {
   isActive,
   isTodayEAT,
   nextStatus,
-  teamName,
+  memberTeamName,
   time,
 } from "@/lib/utils";
 import type { Availability, Incident } from "@/lib/types";
@@ -78,7 +78,7 @@ export function ResponderHome() {
       )}
       <p className="responder-team-label">
         <Radio size={15} />
-        {responder ? teamName(responder.category) : "Response team"}
+        {responder ? memberTeamName(responder) : "Response team"}
         <span>·</span>
         {responder?.callsign}
       </p>
