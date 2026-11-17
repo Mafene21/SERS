@@ -69,6 +69,10 @@ async function run(name, executablePath) {
     await denied.goto(url);
     assert.equal(await denied.title(), "SERS · Emergency reporting");
     await denied.getByRole("heading", { name: "Help can start with one report." }).waitFor();
+    await denied.getByRole("button", { name: "Privacy" }).click();
+    await denied.getByRole("heading", { name: "Your report information" }).waitFor();
+    await denied.getByText("Move to safety and call your local emergency number first.").waitFor();
+    await denied.getByRole("button", { name: "Return home" }).click();
     await denied.getByRole("button", { name: "Get started" }).click();
     await denied.getByRole("heading", { name: "Welcome" }).waitFor();
     assert.equal(await denied.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
