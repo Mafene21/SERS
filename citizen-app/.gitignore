@@ -1,2 +1,4 @@
 /web/config.local.js
 /__pycache__/
+.vercel
+.env*
